@@ -91,7 +91,10 @@ public class DriveSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // Update the odometry in the periodic block
-    System.out.println("heading" + getHeading());
+   // System.out.println("heading" + getHeading());
+    System.out.println("X: " + m_gyro.getAngle(IMUAxis.kX));
+System.out.println("Y: " + m_gyro.getAngle(IMUAxis.kY));
+System.out.println("Z: " + m_gyro.getAngle(IMUAxis.kZ));
     m_odometry.update(
         Rotation2d.fromDegrees(m_gyro.getAngle(IMUAxis.kZ)),
         new SwerveModulePosition[] {
