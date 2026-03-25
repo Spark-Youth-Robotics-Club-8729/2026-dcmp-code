@@ -14,10 +14,14 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.util.sendable.Sendable;
+import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.ADIS16470_IMU;
 import edu.wpi.first.wpilibj.ADIS16470_IMU.IMUAxis;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.DriveConstants;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.MAXSwerveModule;
 
 public class DriveSubsystem extends SubsystemBase {
   // Create MAXSwerveModules
@@ -52,18 +56,42 @@ public class DriveSubsystem extends SubsystemBase {
           m_frontLeft.getPosition(),
           m_frontRight.getPosition(),
           m_rearLeft.getPosition(),
-          m_rearRight.getPosition()
+          m_rearRight.getPosition(),
       });
 
   /** Creates a new DriveSubsystem. */
   public DriveSubsystem() {
-    // Usage reporting for MAXSwerve template
-    HAL.report(tResourceType.kResourceType_RobotDrive, tInstances.kRobotDriveSwerve_MaxSwerve);
-  }
 
+    HAL.report(tResourceType.kResourceType_RobotDrive, tInstances.kRobotDriveSwerve_MaxSwerve);
+    SmartDashboard.putData("Swerve Drive", new Sendable() {
+      @Override
+      public void initSendable(SendableBuilder builder) {
+        builder.setSmartDashboardType("SwerveDrive");
+
+        builder.addDoubleProperty("Front Left Angle", () -> (float) m_frontLeft.getPosition().angle.getRadians(), null);
+        builder.addDoubleProperty("Front Left Velocity", () -> (float)(m_frontLeft.getVelocity()), null);
+
+        builder.addDoubleProperty("Front right Angle", () ->(float) m_frontRight.getPosition().angle.getRadians(), null);
+        builder.addDoubleProperty("Front Right Velocity", () -> (float) (m_frontRight.getVelocity()), null);
+
+        builder.addDoubleProperty("back left Angle", () -> (float) (m_rearLeft.getPosition().angle.getRadians()), null);
+        builder.addDoubleProperty("Back Left Velocity", () -> (float) (m_rearLeft.getVelocity()), null);
+
+        builder.addDoubleProperty("back right Angle", () -> (float) (m_rearRight.getPosition().angle.getRadians()), null);
+        builder.addDoubleProperty("Back Right Velocity", () -> (float) (m_rearRight.getVelocity()), null);
+
+        builder.addDoubleProperty("Robot Angle", () -> (float) (m_gyro.getAngle()), null);
+
+        builder.addDoubleProperty("heading", ()->(float)getHeading(), null);
+      }
+    });
+  }
+  
+    // Usage reporting for MAXSwerve template
   @Override
   public void periodic() {
     // Update the odometry in the periodic block
+    System.out.println("heading" + getHeading());
     m_odometry.update(
         Rotation2d.fromDegrees(m_gyro.getAngle(IMUAxis.kZ)),
         new SwerveModulePosition[] {
@@ -126,6 +154,8 @@ public class DriveSubsystem extends SubsystemBase {
     m_frontRight.setDesiredState(swerveModuleStates[1]);
     m_rearLeft.setDesiredState(swerveModuleStates[2]);
     m_rearRight.setDesiredState(swerveModuleStates[3]);
+
+    
   }
 
   /**
@@ -182,4 +212,10 @@ public class DriveSubsystem extends SubsystemBase {
   public double getTurnRate() {
     return m_gyro.getRate(IMUAxis.kZ) * (DriveConstants.kGyroReversed ? -1.0 : 1.0);
   }
+
+    
+  
+
+
 }
+

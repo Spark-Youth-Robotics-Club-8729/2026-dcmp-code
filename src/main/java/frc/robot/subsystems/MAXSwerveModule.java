@@ -16,6 +16,8 @@ import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
+import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
+
 
 import frc.robot.Configs;
 
@@ -86,6 +88,13 @@ public class MAXSwerveModule {
         new Rotation2d(m_turningEncoder.getPosition() - m_chassisAngularOffset));
   }
 
+
+  public  double getVelocity() {
+    return(m_drivingEncoder.getVelocity());
+  }
+
+
+  
   /**
    * Sets the desired state for the module.
    *
