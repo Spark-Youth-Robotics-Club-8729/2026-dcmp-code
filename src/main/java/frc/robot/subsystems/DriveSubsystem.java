@@ -45,8 +45,15 @@ public class DriveSubsystem extends SubsystemBase {
       DriveConstants.kRearRightTurningCanId,
       DriveConstants.kBackRightChassisAngularOffset);
 
-  // The gyro sensor
-  private final ADIS16470_IMU m_gyro = new ADIS16470_IMU();
+  // The gyro sensor (plugged into the MXP port) and wait for 1 second for it to calibrate
+  private final ADIS16470_IMU m_gyro = new ADIS16470_IMU(
+    IMUAxis.kZ, 
+    IMUAxis.kX, 
+    IMUAxis.kY, 
+    SPI.Port.kMXP, 
+    ADIS16470CalibrationTime._1s
+);
+  //old version (use if plugged into SPI port) : private final ADIS16470_IMU m_gyro = new ADIS16470_IMU();
 
   // Odometry class for tracking robot pose
   SwerveDriveOdometry m_odometry = new SwerveDriveOdometry(
