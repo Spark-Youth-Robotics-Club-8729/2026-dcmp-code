@@ -78,6 +78,8 @@ public class RobotContainer {
         .onTrue(new InstantCommand(
             () -> m_robotDrive.zeroHeading(),
             m_robotDrive));
+
+
   }
 
   /**
@@ -124,8 +126,7 @@ public class RobotContainer {
 
     // Run path following command, then stop at the end.
     System.out.println("here");
-    return swerveControllerCommand.andThen(() -> m_robotDrive.drive(0, 0, 0, false));
+    return swerveControllerCommand.andThen(() -> m_robotDrive.drive(0, 0, 0, true));
   }
-
   
 }
