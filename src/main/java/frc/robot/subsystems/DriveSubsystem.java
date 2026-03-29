@@ -72,15 +72,13 @@ public class DriveSubsystem extends SubsystemBase {
         builder.addDoubleProperty("Front Left Angle", () -> (float) m_frontLeft.getPosition().angle.getRadians(), null);
         builder.addDoubleProperty("Front Left Velocity", () -> (float) (m_frontLeft.getVelocity()), null);
 
-        builder.addDoubleProperty("Front right Angle", () -> (float) m_frontRight.getPosition().angle.getRadians(),
-            null);
+        builder.addDoubleProperty("Front right Angle", () -> (float) m_frontRight.getPosition().angle.getRadians(), null);
         builder.addDoubleProperty("Front Right Velocity", () -> (float) (m_frontRight.getVelocity()), null);
 
         builder.addDoubleProperty("back left Angle", () -> (float) (m_rearLeft.getPosition().angle.getRadians()), null);
         builder.addDoubleProperty("Back Left Velocity", () -> (float) (m_rearLeft.getVelocity()), null);
 
-        builder.addDoubleProperty("back right Angle", () -> (float) (m_rearRight.getPosition().angle.getRadians()),
-            null);
+        builder.addDoubleProperty("back right Angle", () -> (float) (m_rearRight.getPosition().angle.getRadians()), null);
         builder.addDoubleProperty("Back Right Velocity", () -> (float) (m_rearRight.getVelocity()), null);
 
         builder.addDoubleProperty("Robot Angle", () -> (float) (m_gyro.getAngle()), null);
@@ -167,10 +165,10 @@ public class DriveSubsystem extends SubsystemBase {
    * Sets the wheels into an X formation to prevent movement.
    */
   public void setX() {
-    m_frontLeft.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(45)));
-    m_frontRight.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(-45)));
-    m_rearLeft.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(-45)));
-    m_rearRight.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(45)));
+      m_frontLeft.setDesiredState(new SwerveModuleState(0.001, Rotation2d.fromDegrees(45)));
+      m_frontRight.setDesiredState(new SwerveModuleState(0.001, Rotation2d.fromDegrees(-45)));
+      m_rearLeft.setDesiredState(new SwerveModuleState(0.001, Rotation2d.fromDegrees(-45)));
+      m_rearRight.setDesiredState(new SwerveModuleState(0.001, Rotation2d.fromDegrees(45)));
   }
 
   /**

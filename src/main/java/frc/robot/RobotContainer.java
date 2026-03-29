@@ -14,7 +14,7 @@ import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.PS4Controller.Button;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
@@ -39,6 +39,10 @@ public class RobotContainer {
   // The driver's controller
   XboxController m_driverController = new XboxController(OIConstants.kDriverControllerPort);
 
+  boolean m_fieldRelative = true;
+
+  private final PIDController m_snapController = new PIDController(0.008, 0, 0.002);
+
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
@@ -48,14 +52,12 @@ public class RobotContainer {
 
     // Configure default commands
     m_robotDrive.setDefaultCommand(
-        // The left stick controls translation of the robot.
-        // Turning is controlled by the X axis of the right stick.
         new RunCommand(
             () -> m_robotDrive.drive(
                 -MathUtil.applyDeadband(m_driverController.getLeftY(), OIConstants.kDriveDeadband),
                 -MathUtil.applyDeadband(m_driverController.getLeftX(), OIConstants.kDriveDeadband),
                 -MathUtil.applyDeadband(m_driverController.getRightX(), OIConstants.kDriveDeadband),
-                true),
+                m_fieldRelative),  // <-- was hardcoded true
             m_robotDrive));
   }
 
@@ -68,19 +70,37 @@ public class RobotContainer {
    * passing it to a
    * {@link JoystickButton}.
    */
-  private void configureButtonBindings() {
-    new JoystickButton(m_driverController, Button.kR1.value)
-        .whileTrue(new RunCommand(
-            () -> m_robotDrive.setX(),
-            m_robotDrive));
+    private void configureButtonBindings() {
+        // Single press of Right Bumper sets the robot into X formation
+        new JoystickButton(m_driverController, XboxController.Button.kX.value)
+            .onTrue(new RunCommand(() -> m_robotDrive.setX(), m_robotDrive)
+                .until(() ->
+                    Math.abs(m_driverController.getLeftY()) > OIConstants.kDriveDeadband ||
+                    Math.abs(m_driverController.getLeftX()) > OIConstants.kDriveDeadband ||
+                    Math.abs(m_driverController.getRightX()) > OIConstants.kDriveDeadband
+                ));
 
-    new JoystickButton(m_driverController, XboxController.Button.kStart.value)
-        .onTrue(new InstantCommand(
-            () -> m_robotDrive.zeroHeading(),
-            m_robotDrive));
+        // Single press of Start button zeroes the gyro heading
+        new JoystickButton(m_driverController, XboxController.Button.kStart.value)
+            .onTrue(new InstantCommand(() -> {
+                System.out.println("Zeroing gyro!");
+                m_robotDrive.zeroHeading();
+            }, m_robotDrive));
 
+        // In configureButtonBindings()
+        new JoystickButton(m_driverController, XboxController.Button.kB.value)
+            .onTrue(new InstantCommand(() -> m_fieldRelative = !m_fieldRelative));
 
-  }
+        new Trigger(() -> m_driverController.getLeftTriggerAxis() > 0.5)
+            .whileTrue(new RunCommand(() -> {
+                double snapOutput = m_snapController.calculate(m_robotDrive.getHeading(), 0);
+                m_robotDrive.drive(
+                    -MathUtil.applyDeadband(m_driverController.getLeftY(), OIConstants.kDriveDeadband),
+                    -MathUtil.applyDeadband(m_driverController.getLeftX(), OIConstants.kDriveDeadband),
+                    snapOutput,
+                    m_fieldRelative);
+            }, m_robotDrive));
+        }
 
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.
