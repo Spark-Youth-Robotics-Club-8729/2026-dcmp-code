@@ -89,14 +89,12 @@ public class MAXSwerveModule {
   }
 
 
-  public double getVelocity() {
-      return(m_drivingEncoder.getVelocity());
+  public  double getVelocity() {
+    return(m_drivingEncoder.getVelocity());
   }
 
-  public Rotation2d getChassisOffset() {
-      return new Rotation2d(m_chassisAngularOffset);
-  }
 
+  
   /**
    * Sets the desired state for the module.
    *
