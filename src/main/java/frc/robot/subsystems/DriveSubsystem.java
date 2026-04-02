@@ -198,6 +198,29 @@ public class DriveSubsystem extends SubsystemBase {
     m_gyro.reset();
   }
 
+  /** Stop all motors like a good boy. */
+  public void stop() {
+    drive(0, 0, 0, true);
+  }
+
+  /**
+   * Runs a single swerve module at the specified state and stops all others. Used for per-module
+   * testing.
+   *
+   * @param moduleIndex 0=FL, 1=FR, 2=BL, 3=BR
+   * @param state Desired speed and steering angle for the active module
+   */
+  public void runSingleModule(int moduleIndex, SwerveModuleState state) {
+    MAXSwerveModule[] modules = {m_frontLeft, m_frontRight, m_rearLeft, m_rearRight};
+    for (int i = 0; i < 4; i++) {
+      if (i == moduleIndex) {
+        modules[i].setDesiredState(state);
+      } else {
+        modules[i].setDesiredState(new SwerveModuleState(0, modules[i].getPosition().angle));
+      }
+    }
+  }
+
   /**
    * Returns the heading of the robot.
    *

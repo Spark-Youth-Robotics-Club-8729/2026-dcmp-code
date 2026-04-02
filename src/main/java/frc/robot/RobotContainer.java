@@ -25,6 +25,7 @@ import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import java.util.List;
+import frc.robot.command.SystemTestCommand;
 
 /*
  * This class is where the bulk of the robot should be declared.  Since Command-based is a
@@ -90,6 +91,9 @@ public class RobotContainer {
         // In configureButtonBindings()
         new JoystickButton(m_driverController, XboxController.Button.kB.value)
             .onTrue(new InstantCommand(() -> m_fieldRelative = !m_fieldRelative));
+
+        new JoystickButton(m_driverController, XboxController.Button.kY.value)    // change to pov Up later cuz im too lazy
+            .onTrue(new SystemTestCommand(m_robotDrive));
 
         new Trigger(() -> m_driverController.getLeftTriggerAxis() > 0.5)
             .whileTrue(new RunCommand(() -> {
