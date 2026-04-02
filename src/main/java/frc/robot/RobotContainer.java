@@ -41,7 +41,7 @@ public class RobotContainer {
 
   boolean m_fieldRelative = true;
 
-  private final PIDController m_snapController = new PIDController(0.008, 0, 0.002);
+  private final PIDController m_snapController = new PIDController(DriveConstants.kPSnap, DriveConstants.kISnap, DriveConstants.kDSnap);
 
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
@@ -81,8 +81,8 @@ public class RobotContainer {
                 ));
 
         // Single press of Start button zeroes the gyro heading
-        new JoystickButton(m_driverController, XboxController.Button.kStart.value)
-            .onTrue(new InstantCommand(() -> {
+        new JoystickButton(m_driverController, XboxController.Button.kA.value)
+            .whileTrue(new RunCommand(() -> {
                 System.out.println("Zeroing gyro!");
                 m_robotDrive.zeroHeading();
             }, m_robotDrive));
@@ -93,12 +93,23 @@ public class RobotContainer {
 
         new Trigger(() -> m_driverController.getLeftTriggerAxis() > 0.5)
             .whileTrue(new RunCommand(() -> {
-                double snapOutput = m_snapController.calculate(m_robotDrive.getHeading(), 0);
-                m_robotDrive.drive(
-                    -MathUtil.applyDeadband(m_driverController.getLeftY(), OIConstants.kDriveDeadband),
-                    -MathUtil.applyDeadband(m_driverController.getLeftX(), OIConstants.kDriveDeadband),
-                    snapOutput,
-                    m_fieldRelative);
+                double heading = m_robotDrive.getHeading();
+                System.out.println("Heading: " + heading);   // we love debug prints
+                if (Math.abs(heading) < DriveConstants.snapTolerance) {  // if heading within tolerance, it wont move
+                    double snapOutput = 0;
+                    m_robotDrive.drive(
+                        -MathUtil.applyDeadband(m_driverController.getLeftY(), OIConstants.kDriveDeadband),
+                        -MathUtil.applyDeadband(m_driverController.getLeftX(), OIConstants.kDriveDeadband),
+                        snapOutput,
+                        m_fieldRelative);
+                } else {
+                    double snapOutput = m_snapController.calculate(heading, 0);
+                    m_robotDrive.drive(
+                        -MathUtil.applyDeadband(m_driverController.getLeftY(), OIConstants.kDriveDeadband),
+                        -MathUtil.applyDeadband(m_driverController.getLeftX(), OIConstants.kDriveDeadband),
+                        snapOutput,
+                        m_fieldRelative);
+                }
             }, m_robotDrive));
         }
 

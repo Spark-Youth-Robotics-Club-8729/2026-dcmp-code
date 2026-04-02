@@ -28,10 +28,16 @@ public final class Constants {
     // the robot, rather the allowed maximum speeds
     public static final double kMaxSpeedMetersPerSecond = 0.1;
     public static final double kMaxAngularSpeed = 2 * Math.PI; // radians per second
-    // tuning for snapping pid
+    
     public static final double kP = 1.4;
     public static final double kI = 0.4;
     public static final double kD = 0.2;
+
+    public static final double kPSnap = 0.02;
+    public static final double kISnap = 0.0;
+    public static final double kDSnap = 0.002;
+    public static final double snapTolerance = 10.0; //degrees
+
     // Chassis configuration
     public static final double kTrackWidth = Units.inchesToMeters(26.5);
     // Distance between centers of right and left wheels on robot
