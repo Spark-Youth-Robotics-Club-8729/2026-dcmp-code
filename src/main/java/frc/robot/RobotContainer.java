@@ -14,6 +14,7 @@ import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj.PS4Controller.Button;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
@@ -92,7 +93,7 @@ public class RobotContainer {
 
         // In configureButtonBindings()
         new JoystickButton(m_driverController, XboxController.Button.kB.value)
-            .onTrue(new InstantCommand(() -> m_fieldRelative = !m_fieldRelative));
+            .onTrue(new RunCommand(() -> m_fieldRelative = !m_fieldRelative));
 
         new JoystickButton(m_driverController, XboxController.Button.kY.value)    // change to pov Up later cuz im too lazy
             .onTrue(new SystemTestCommand(m_robotDrive));
