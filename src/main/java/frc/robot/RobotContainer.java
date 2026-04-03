@@ -14,6 +14,7 @@ import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj.PS4Controller.Button;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
@@ -24,7 +25,10 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import edu.wpi.first.wpilibj2.command.button.POVButton;
+
 import java.util.List;
+import frc.robot.command.SystemTestCommand;
 
 /*
  * This class is where the bulk of the robot should be declared.  Since Command-based is a
@@ -59,7 +63,7 @@ public class RobotContainer {
                 -MathUtil.applyDeadband(m_driverController.getLeftY(), OIConstants.kDriveDeadband),
                 -MathUtil.applyDeadband(m_driverController.getLeftX(), OIConstants.kDriveDeadband),
                 -MathUtil.applyDeadband(m_driverController.getRightX(), OIConstants.kDriveDeadband),
-                true),
+                m_fieldRelative),
             m_robotDrive));
   }
 
@@ -73,7 +77,29 @@ public class RobotContainer {
    * {@link JoystickButton}.
    */
     private void configureButtonBindings() {
-        // Single press of Right Bumper sets the robot into X formation
+        /**
+         * DRIVER CONTROLS (Port 0)
+         * - Left Joystick ........ Drive (works!)
+         * - Right Joystick ....... Turn (works!)
+         * - B Button ............. Robot to Field (works)
+         * - LT (Left Trigger) .... Reset Gyro to 0 (works!)
+         * - A Button ............. Snap to 0° (works!)
+         * - X ... Lock Wheels to X (works!)
+         * - POV Down ............. Reset Hood to 0 (havent tested yet)
+         * - POV Up ............... Test Everything (works!)
+         * ----------------------------------------------
+         * OPERATOR CONTROLS (Port 1)
+         * - RT (Right Trigger) ... Shooting (havent tested yet)
+         * - LT (Left Trigger) .... Passing (havent tested yet)
+         * - RB (Right Bumper) .... Intake (havent tested yet)
+         * - LB (Left Bumper) ..... Outtake (havent tested yet)
+         * - X Button ............. Unjam (havent tested yet)
+         * - POV Down ............. Slapdown (havent tested yet)
+         * - POV Left ............. Hood Angle Down (havent tested yet)
+         * - POV Right ............ Hood Angle Up (havent tested yet)
+         */
+
+        // Single press of X sets the robot into X formation
         new JoystickButton(m_driverController, XboxController.Button.kX.value)
             .onTrue(new RunCommand(() -> m_robotDrive.setX(), m_robotDrive)
                 .until(() ->
@@ -91,7 +117,15 @@ public class RobotContainer {
 
         // In configureButtonBindings()
         new JoystickButton(m_driverController, XboxController.Button.kB.value)
-            .onTrue(new InstantCommand(() -> m_fieldRelative = !m_fieldRelative));
+            .onTrue(new InstantCommand(() ->
+        {
+             m_fieldRelative = !m_fieldRelative;
+             System.out.println("Field Relative equals "+m_fieldRelative);
+        }
+             ));
+
+        new POVButton(m_driverController, 0)   // change to pov Up later cuz im too lazy
+            .onTrue(new SystemTestCommand(m_robotDrive));
 
         new Trigger(() -> m_driverController.getLeftTriggerAxis() > 0.5)
             .whileTrue(new RunCommand(() -> {
@@ -159,7 +193,7 @@ public class RobotContainer {
 
     // Run path following command, then stop at the end.
     System.out.println("here");
-    return swerveControllerCommand.andThen(() -> m_robotDrive.drive(0, 0, 0, false));
+    return swerveControllerCommand.andThen(() -> m_robotDrive.drive(0, 0, 0, true));   // auto needs to be in field relative i think? if not, then just change the true to false
   }
 
   
