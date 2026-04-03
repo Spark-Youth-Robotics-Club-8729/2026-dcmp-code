@@ -25,6 +25,8 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import edu.wpi.first.wpilibj2.command.button.POVButton;
+
 import java.util.List;
 import frc.robot.command.SystemTestCommand;
 
@@ -79,10 +81,10 @@ public class RobotContainer {
          * DRIVER CONTROLS (Port 0)
          * - Left Joystick ........ Drive (works!)
          * - Right Joystick ....... Turn (works!)
-         * - B Button ............. Robot to Field (test again)
+         * - B Button ............. Robot to Field (works)
          * - LT (Left Trigger) .... Reset Gyro to 0 (works!)
          * - A Button ............. Snap to 0° (works!)
-         * - RT (Right Trigger) ... Lock Wheels to X (works!)
+         * - X ... Lock Wheels to X (works!)
          * - POV Down ............. Reset Hood to 0 (havent tested yet)
          * - POV Up ............... Test Everything (works!)
          * ----------------------------------------------
@@ -97,7 +99,7 @@ public class RobotContainer {
          * - POV Right ............ Hood Angle Up (havent tested yet)
          */
 
-        // Single press of Right Bumper sets the robot into X formation
+        // Single press of X sets the robot into X formation
         new JoystickButton(m_driverController, XboxController.Button.kX.value)
             .onTrue(new RunCommand(() -> m_robotDrive.setX(), m_robotDrive)
                 .until(() ->
@@ -115,9 +117,14 @@ public class RobotContainer {
 
         // In configureButtonBindings()
         new JoystickButton(m_driverController, XboxController.Button.kB.value)
-            .onTrue(new InstantCommand(() -> m_fieldRelative = !m_fieldRelative));
+            .onTrue(new InstantCommand(() ->
+        {
+             m_fieldRelative = !m_fieldRelative;
+             System.out.println("Field Relative equals "+m_fieldRelative);
+        }
+             ));
 
-        new JoystickButton(m_driverController, XboxController.Button.kY.value)    // change to pov Up later cuz im too lazy
+        new POVButton(m_driverController, 0)   // change to pov Up later cuz im too lazy
             .onTrue(new SystemTestCommand(m_robotDrive));
 
         new Trigger(() -> m_driverController.getLeftTriggerAxis() > 0.5)
