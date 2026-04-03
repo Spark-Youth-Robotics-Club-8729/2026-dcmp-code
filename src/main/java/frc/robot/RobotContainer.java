@@ -61,7 +61,7 @@ public class RobotContainer {
                 -MathUtil.applyDeadband(m_driverController.getLeftY(), OIConstants.kDriveDeadband),
                 -MathUtil.applyDeadband(m_driverController.getLeftX(), OIConstants.kDriveDeadband),
                 -MathUtil.applyDeadband(m_driverController.getRightX(), OIConstants.kDriveDeadband),
-                true),
+                m_fieldRelative),
             m_robotDrive));
   }
 
@@ -75,6 +75,28 @@ public class RobotContainer {
    * {@link JoystickButton}.
    */
     private void configureButtonBindings() {
+        /**
+         * DRIVER CONTROLS (Port 0)
+         * - Left Joystick ........ Drive (works!)
+         * - Right Joystick ....... Turn (works!)
+         * - B Button ............. Robot to Field (test again)
+         * - LT (Left Trigger) .... Reset Gyro to 0 (works!)
+         * - A Button ............. Snap to 0° (works!)
+         * - RT (Right Trigger) ... Lock Wheels to X (works!)
+         * - POV Down ............. Reset Hood to 0 (havent tested yet)
+         * - POV Up ............... Test Everything (works!)
+         * ----------------------------------------------
+         * OPERATOR CONTROLS (Port 1)
+         * - RT (Right Trigger) ... Shooting (havent tested yet)
+         * - LT (Left Trigger) .... Passing (havent tested yet)
+         * - RB (Right Bumper) .... Intake (havent tested yet)
+         * - LB (Left Bumper) ..... Outtake (havent tested yet)
+         * - X Button ............. Unjam (havent tested yet)
+         * - POV Down ............. Slapdown (havent tested yet)
+         * - POV Left ............. Hood Angle Down (havent tested yet)
+         * - POV Right ............ Hood Angle Up (havent tested yet)
+         */
+
         // Single press of Right Bumper sets the robot into X formation
         new JoystickButton(m_driverController, XboxController.Button.kX.value)
             .onTrue(new RunCommand(() -> m_robotDrive.setX(), m_robotDrive)
@@ -93,7 +115,7 @@ public class RobotContainer {
 
         // In configureButtonBindings()
         new JoystickButton(m_driverController, XboxController.Button.kB.value)
-            .onTrue(new RunCommand(() -> m_fieldRelative = !m_fieldRelative));
+            .onTrue(new InstantCommand(() -> m_fieldRelative = !m_fieldRelative));
 
         new JoystickButton(m_driverController, XboxController.Button.kY.value)    // change to pov Up later cuz im too lazy
             .onTrue(new SystemTestCommand(m_robotDrive));
@@ -164,7 +186,7 @@ public class RobotContainer {
 
     // Run path following command, then stop at the end.
     System.out.println("here");
-    return swerveControllerCommand.andThen(() -> m_robotDrive.drive(0, 0, 0, false));
+    return swerveControllerCommand.andThen(() -> m_robotDrive.drive(0, 0, 0, true));   // auto needs to be in field relative i think? if not, then just change the true to false
   }
 
   
