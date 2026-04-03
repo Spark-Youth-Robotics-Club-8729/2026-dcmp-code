@@ -20,9 +20,12 @@ import edu.wpi.first.wpilibj.PS4Controller.Button;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
+import frc.robot.Constants.ShooterConstants;
+import frc.robot.Constants.intakeconstants;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.IndexerSubsystem;
-import frc.robot.subsystems.IntakeSubsystem;
+//import frc.robot.subsystems.IntakeSubsystem;
+import frc.robot.subsystems.ShooterSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -30,6 +33,8 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import edu.wpi.first.wpilibj2.command.button.POVButton;
+
 import java.util.List;
 import frc.robot.command.SystemTestCommand;
 
@@ -43,7 +48,8 @@ public class RobotContainer {
   // The robot's subsystems
   private final DriveSubsystem m_robotDrive = new DriveSubsystem();
   private final IndexerSubsystem m_indexerSubsystem = new IndexerSubsystem();
-  private final IntakeSubsystem m_intakeSubsystem = new IntakeSubsystem();
+  //private final IntakeSubsystem m_intakeSubsystem = new IntakeSubsystem();
+  private final ShooterSubsystem m_shooterSubsystem = new ShooterSubsystem();
   // The driver's controller
   XboxController m_driverController = new XboxController(OIConstants.kDriverControllerPort);
   XboxController m_operatorController = new XboxController(OIConstants.kOperatorControllerPort);
@@ -151,12 +157,62 @@ public class RobotContainer {
 
         //Operator               
         
+        //intake
+        //new JoystickButton(m_operatorController, XboxController.Button.kRightBumper.value)
+          //  .whileTrue(Commands.startEnd(() -> m_intakeSubsystem.intake(), ()->m_intakeSubsystem.stopintake()));
 
-        new JoystickButton(m_operatorController, XboxController.Button.kA.value)
-            .whileTrue(Commands.startEnd(() -> m_intakeSubsystem.intake(), ()->m_intakeSubsystem.stopintake()));
+        //new JoystickButton(m_operatorController, XboxController.Button.kLeftBumper.value)
+          //  .whileTrue(Commands.startEnd(() -> m_intakeSubsystem.outtake(), ()->m_intakeSubsystem.stopintake()));
 
-        new JoystickButton(m_operatorController, XboxController.Button.kB.value)
-            .whileTrue(Commands.startEnd(() -> m_intakeSubsystem.outtake(), ()->m_intakeSubsystem.stopintake()));
+            /** Final code 
+             * 
+             * new POVButton(m_operatorController, 180)
+            .onTrue(Commands.runOnce(()->{
+                if(m_intakeSubsystem.count%2==0){
+                    m_intakeSubsystem.slapdowndown();
+                }
+                else{
+                    m_intakeSubsystem.slapdownup();
+                }
+            },m_intakeSubsystem));
+             * 
+             */
+        
+        // new POVButton(m_operatorController, 90)
+        //     .onTrue(Commands.runOnce(()->{
+        //         m_intakeSubsystem.slapdowndown();
+        //     },m_intakeSubsystem));
+        // new POVButton(m_operatorController, 270)
+        //     .onTrue(Commands.runOnce(()->{
+        //         m_intakeSubsystem.slapdownup();
+        //     },m_intakeSubsystem));
+
+
+
+        //shooter
+        new Trigger(()->m_operatorController.getLeftTriggerAxis()>0.5)//passing
+            .whileTrue(Commands.startEnd(() -> {
+                m_shooterSubsystem.setFlywheelVelocities(ShooterConstants.maxFlywheelSpeedRPM-1500, ShooterConstants.defaultFlywheelSpeedRPM);
+                m_shooterSubsystem.feedNote();
+                m_indexerSubsystem.index();
+            }, 
+            ()->{
+                m_shooterSubsystem.setFlywheelVelocities(0, 0);
+                m_shooterSubsystem.stopFeeder();
+                m_indexerSubsystem.stopindexer();
+            },m_shooterSubsystem,m_indexerSubsystem));
+
+        new Trigger(()->m_operatorController.getRightTriggerAxis()>0.5)//shooting, need to add calculator and hood 
+            .whileTrue(Commands.startEnd(() -> {
+                m_shooterSubsystem.setFlywheelVelocities(ShooterConstants.defaultFlywheelSpeedRPM, ShooterConstants.defaultFlywheelSpeedRPM);
+                m_shooterSubsystem.feedNote();
+                m_indexerSubsystem.index();
+            }, 
+            ()->{
+                m_shooterSubsystem.setFlywheelVelocities(0, 0);
+                m_shooterSubsystem.stopFeeder();
+                m_indexerSubsystem.stopindexer();
+            },m_shooterSubsystem,m_indexerSubsystem));
     }
         
 
