@@ -13,18 +13,25 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
+import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj.PS4Controller.Button;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.subsystems.DriveSubsystem;
+import frc.robot.subsystems.IndexerSubsystem;
+import frc.robot.subsystems.IntakeSubsystem;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import java.util.List;
+import frc.robot.command.SystemTestCommand;
 
 /*
  * This class is where the bulk of the robot should be declared.  Since Command-based is a
@@ -35,10 +42,11 @@ import java.util.List;
 public class RobotContainer {
   // The robot's subsystems
   private final DriveSubsystem m_robotDrive = new DriveSubsystem();
-
+  private final IndexerSubsystem m_indexerSubsystem = new IndexerSubsystem();
+  private final IntakeSubsystem m_intakeSubsystem = new IntakeSubsystem();
   // The driver's controller
   XboxController m_driverController = new XboxController(OIConstants.kDriverControllerPort);
-
+  XboxController m_operatorController = new XboxController(OIConstants.kOperatorControllerPort);
   boolean m_fieldRelative = true;
 
   private final PIDController m_snapController = new PIDController(DriveConstants.kPSnap, DriveConstants.kISnap, DriveConstants.kDSnap);
@@ -59,7 +67,7 @@ public class RobotContainer {
                 -MathUtil.applyDeadband(m_driverController.getLeftY(), OIConstants.kDriveDeadband),
                 -MathUtil.applyDeadband(m_driverController.getLeftX(), OIConstants.kDriveDeadband),
                 -MathUtil.applyDeadband(m_driverController.getRightX(), OIConstants.kDriveDeadband),
-                true),
+                m_fieldRelative),
             m_robotDrive));
   }
 
@@ -73,6 +81,28 @@ public class RobotContainer {
    * {@link JoystickButton}.
    */
     private void configureButtonBindings() {
+        /**
+         * DRIVER CONTROLS (Port 0)
+         * - Left Joystick ........ Drive (works!)
+         * - Right Joystick ....... Turn (works!)
+         * - B Button ............. Robot to Field (test again)
+         * - LT (Left Trigger) .... Reset Gyro to 0 (works!)
+         * - A Button ............. Snap to 0° (works!)
+         * - RT (Right Trigger) ... Lock Wheels to X (works!)
+         * - POV Down ............. Reset Hood to 0 (havent tested yet)
+         * - POV Up ............... Test Everything (works!)
+         * ----------------------------------------------
+         * OPERATOR CONTROLS (Port 1)
+         * - RT (Right Trigger) ... Shooting (havent tested yet)
+         * - LT (Left Trigger) .... Passing (havent tested yet)
+         * - RB (Right Bumper) .... Intake (havent tested yet)
+         * - LB (Left Bumper) ..... Outtake (havent tested yet)
+         * - X Button ............. Unjam (havent tested yet)
+         * - POV Down ............. Slapdown (havent tested yet)
+         * - POV Left ............. Hood Angle Down (havent tested yet)
+         * - POV Right ............ Hood Angle Up (havent tested yet)
+         */
+
         // Single press of Right Bumper sets the robot into X formation
         new JoystickButton(m_driverController, XboxController.Button.kX.value)
             .onTrue(new RunCommand(() -> m_robotDrive.setX(), m_robotDrive)
@@ -92,6 +122,9 @@ public class RobotContainer {
         // In configureButtonBindings()
         new JoystickButton(m_driverController, XboxController.Button.kB.value)
             .onTrue(new InstantCommand(() -> m_fieldRelative = !m_fieldRelative));
+
+        new JoystickButton(m_driverController, XboxController.Button.kY.value)    // change to pov Up later cuz im too lazy
+            .onTrue(new SystemTestCommand(m_robotDrive));
 
         new Trigger(() -> m_driverController.getLeftTriggerAxis() > 0.5)
             .whileTrue(new RunCommand(() -> {
@@ -113,7 +146,22 @@ public class RobotContainer {
                         m_fieldRelative);
                 }
             }, m_robotDrive));
-        }
+
+
+
+        //Operator               
+        
+
+        new JoystickButton(m_operatorController, XboxController.Button.kA.value)
+            .whileTrue(Commands.startEnd(() -> m_intakeSubsystem.intake(), ()->m_intakeSubsystem.stopintake()));
+
+        new JoystickButton(m_operatorController, XboxController.Button.kB.value)
+            .whileTrue(Commands.startEnd(() -> m_intakeSubsystem.outtake(), ()->m_intakeSubsystem.stopintake()));
+    }
+        
+
+
+
 
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.
@@ -159,7 +207,7 @@ public class RobotContainer {
 
     // Run path following command, then stop at the end.
     System.out.println("here");
-    return swerveControllerCommand.andThen(() -> m_robotDrive.drive(0, 0, 0, false));
+    return swerveControllerCommand.andThen(() -> m_robotDrive.drive(0, 0, 0, true));   // auto needs to be in field relative i think? if not, then just change the true to false
   }
 
   

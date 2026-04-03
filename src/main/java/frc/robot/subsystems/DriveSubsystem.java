@@ -16,8 +16,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
-import edu.wpi.first.wpilibj.ADIS16470_IMU;
-import edu.wpi.first.wpilibj.ADIS16470_IMU.IMUAxis;
+import com.studica.frc.AHRS;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.DriveConstants;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -46,7 +45,7 @@ public class DriveSubsystem extends SubsystemBase {
       DriveConstants.kBackRightChassisAngularOffset);
 
   // The gyro sensor
-  private final ADIS16470_IMU m_gyro = new ADIS16470_IMU();
+  private final AHRS m_gyro = new AHRS(AHRS.NavXComType.kMXP_SPI);
 
   // Odometry class for tracking robot pose
   SwerveDriveOdometry m_odometry = new SwerveDriveOdometry(
@@ -92,9 +91,9 @@ public class DriveSubsystem extends SubsystemBase {
   public void periodic() {
     // Update the odometry in the periodic block
    // System.out.println("heading" + getHeading());
-    System.out.println("X: " + m_gyro.getAngle(IMUAxis.kX));
-System.out.println("Y: " + m_gyro.getAngle(IMUAxis.kY));
-System.out.println("Z: " + m_gyro.getAngle(IMUAxis.kZ));
+    //System.out.println("X: " + m_gyro.getRawGyroX());
+    //System.out.println("Y: " + m_gyro.getRawGyroY());
+    //System.out.println("Z: " + m_gyro.getRawGyroZ());
     m_odometry.update(
         Rotation2d.fromDegrees(-m_gyro.getYaw()),
         new SwerveModulePosition[] {
@@ -198,6 +197,29 @@ System.out.println("Z: " + m_gyro.getAngle(IMUAxis.kZ));
     m_gyro.reset();
   }
 
+  /** Stop all motors like a good boy. */
+  public void stop() {
+    drive(0, 0, 0, true);
+  }
+
+  /**
+   * Runs a single swerve module at the specified state and stops all others. Used for per-module
+   * testing.
+   *
+   * @param moduleIndex 0=FL, 1=FR, 2=BL, 3=BR
+   * @param state Desired speed and steering angle for the active module
+   */
+  public void runSingleModule(int moduleIndex, SwerveModuleState state) {
+    MAXSwerveModule[] modules = {m_frontLeft, m_frontRight, m_rearLeft, m_rearRight};
+    for (int i = 0; i < 4; i++) {
+      if (i == moduleIndex) {
+        modules[i].setDesiredState(state);
+      } else {
+        modules[i].setDesiredState(new SwerveModuleState(0, modules[i].getPosition().angle));
+      }
+    }
+  }
+
   /**
    * Returns the heading of the robot.
    *
@@ -213,12 +235,6 @@ System.out.println("Z: " + m_gyro.getAngle(IMUAxis.kZ));
    * @return The turn rate of the robot, in degrees per second
    */
   public double getTurnRate() {
-    return m_gyro.getRate(IMUAxis.kZ) * (DriveConstants.kGyroReversed ? -1.0 : 1.0);
+    return m_gyro.getRate() * (DriveConstants.kGyroReversed ? -1.0 : 1.0);
   }
-
-    
-  
-
-
 }
-

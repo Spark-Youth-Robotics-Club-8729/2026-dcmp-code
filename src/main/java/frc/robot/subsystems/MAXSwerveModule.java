@@ -92,8 +92,6 @@ public class MAXSwerveModule {
   public  double getVelocity() {
     return(m_drivingEncoder.getVelocity());
   }
-
-
   
   /**
    * Sets the desired state for the module.

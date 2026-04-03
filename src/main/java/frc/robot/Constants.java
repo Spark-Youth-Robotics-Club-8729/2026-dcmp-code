@@ -69,27 +69,72 @@ public final class Constants {
 
     public static final boolean kGyroReversed = false;
   }
+  public static final class indexerconstants{
 
-  public static final class ModuleConstants {
-    // The MAXSwerve module can be configured with one of three pinion gears: 12T,
-    // 13T, or 14T. This changes the drive speed of the module (a pinion gear with
-    // more teeth will result in a robot that drives faster).
-    public static final int kDrivingMotorPinionTeeth = 12;
+    public static final int kIndexerCanId = 22;
+    public static final double gearratio = 4.0;
+    public static final double feedVolts = 6.0;
+    public static final double reverseVolts = -4.0;
+  }
+  public static final class intakeconstants{
+    public static final int kRollerID = 20;
+    public static final int kSlapdownID = 21;
+    public static final double slapdowngearratio = 45;
+    // Slapdown angle limits (radians, at the mechanism after gear reduction)
+    public static final double slapdownUpAngleRad = Units.degreesToRadians(0.0); // TODO: Set actual
+    public static final double slapdownDownAngleRad =
+        Units.degreesToRadians(90.0); // TODO: Set actual
 
-    // Calculations required for driving motor conversion factors and feed forward
-    public static final double kDrivingMotorFreeSpeedRps = NeoMotorConstants.kFreeSpeedRpm / 60;
-    public static final double kWheelDiameterMeters = 0.0762;
-    public static final double kWheelCircumferenceMeters = kWheelDiameterMeters * Math.PI;
-    // 45 teeth on the wheel's bevel gear, 22 teeth on the first-stage spur gear, 15
-    // teeth on the bevel pinion
-    public static final double kDrivingMotorReduction = (45.0 * 22) / (kDrivingMotorPinionTeeth * 15);
-    public static final double kDriveWheelFreeSpeedRps = (kDrivingMotorFreeSpeedRps * kWheelCircumferenceMeters)
-        / kDrivingMotorReduction;
+    // Slapdown PID gains (separate for each mode so they can be tuned independently)
+    public static final double slapdownUpKp = 0.3; // TODO: Tune
+    public static final double slapdownUpKd = 0.4; // TODO: Tune
+
+    public static final double slapdownDownKp = 0.15; // TODO: Tune
+    public static final double slapdownDownKd = 0.8; // TODO: Tune
+
+    public static final double slapdownJitterKp = 0.5; // TODO: Tune
+    public static final double slapdownJitterKd = 0.5; // TODO: Tune
+
+    // Slapdown tolerance
+    public static final double slapdownToleranceRad = Units.degreesToRadians(5.0);
+
+    // Slapdown stall detection (stop PID if we likely hit the bumper)
+    public static final double slapdownStallCurrentAmps = 25.0; // above normal running current
+    public static final double slapdownStallAppliedVolts = 8.0; // near full output
+    public static final double slapdownStallVelocityRadPerSec = Units.degreesToRadians(5.0);
+    public static final double slapdownStallDebounceSec = 0.15;
+
+    // Roller voltages (positive = intake in, negative = outtake)
+    public static final double rollerIntakeVolts = 6.0; // Reduced from 10.0 — TODO: Tune
+    public static final double rollerOuttakeVolts = -4.0; // Reduced from -6.0 — TODO: Tune
+
+    // Jitter constans
+    public static final double jitterFrequencyHz = 0.25; // Tune
+    public static final double jitterAmplitudeDeg = 45.0; // Tune
+
+
+    }
+    public static final class ModuleConstants {
+      // The MAXSwerve module can be configured with one of three pinion gears: 12T,
+      // 13T, or 14T. This changes the drive speed of the module (a pinion gear with
+      // more teeth will result in a robot that drives faster).
+      public static final int kDrivingMotorPinionTeeth = 12;
+
+      // Calculations required for driving motor conversion factors and feed forward
+      public static final double kDrivingMotorFreeSpeedRps = NeoMotorConstants.kFreeSpeedRpm / 60;
+      public static final double kWheelDiameterMeters = 0.0762;
+      public static final double kWheelCircumferenceMeters = kWheelDiameterMeters * Math.PI;
+      // 45 teeth on the wheel's bevel gear, 22 teeth on the first-stage spur gear, 15
+      // teeth on the bevel pinion
+      public static final double kDrivingMotorReduction = (45.0 * 22) / (kDrivingMotorPinionTeeth * 15);
+      public static final double kDriveWheelFreeSpeedRps = (kDrivingMotorFreeSpeedRps * kWheelCircumferenceMeters)
+          / kDrivingMotorReduction;
   }
 
   public static final class OIConstants {
     public static final int kDriverControllerPort = 0;
     public static final double kDriveDeadband = 0.3;
+    public static final int kOperatorControllerPort = 1;
   }
 
   public static final class AutoConstants {
@@ -110,6 +155,8 @@ public final class Constants {
   public static final class NeoMotorConstants {
     public static final double kFreeSpeedRpm = 5676;
   }
+
+  
   
 
 }
