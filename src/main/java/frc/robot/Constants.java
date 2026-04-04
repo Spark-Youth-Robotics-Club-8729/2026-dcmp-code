@@ -180,11 +180,13 @@ public final class Constants {
     public static final double slapdownDownAngleRad = 1.6; // Down position
 
     // Slapdown PID gains (separate for each mode so they can be tuned independently)
-    public static final double slapdownUpKp = 0.05; // TODO: Tune (increased from 0.001)
-    public static final double slapdownUpKd = 0.05; // TODO: Tune
+    public static final double slapdownUpKp = 0.08; // TODO: Tune (increased from 0.001)
+    public static final double slapdownUpKi = 0.0; // TODO: Tune
+    public static final double slapdownUpKd = 0.0; // TODO: Tune
 
-    public static final double slapdownDownKp = 0.1; // TODO: Tune (increased from 0.001)
-    public static final double slapdownDownKd = 0.05; // TODO: Tune
+    public static final double slapdownDownKp = 0.05; // TODO: Tune (increased from 0.001)
+    public static final double slapdownDownKi = 0.0; // TODO: Tune
+    public static final double slapdownDownKd = 0.0; // TODO: Tune
 
     public static final double slapdownJitterKp = 0.5; // TODO: Tune
     public static final double slapdownJitterKd = 0.5; // TODO: Tune

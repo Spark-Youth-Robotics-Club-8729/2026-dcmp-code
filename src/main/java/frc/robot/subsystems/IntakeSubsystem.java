@@ -29,7 +29,7 @@ public class IntakeSubsystem extends SubsystemBase{
     private final TalonFX  intakemotor;
     private final SparkMax slapdownmotor;
     private final AbsoluteEncoder slapdownencoder;
-    private final PIDController slapdownPID;
+    private PIDController slapdownPID;
     private double slapdowntarget;
     public double commandVoltage;
     public IntakeSubsystem() {
@@ -88,12 +88,27 @@ public class IntakeSubsystem extends SubsystemBase{
     //slapdown 
     public void slapdowndown(){
         slapdowntarget = intakeconstants.slapdownDownAngleRad;
+        slapdownPID = new PIDController(intakeconstants.slapdownDownKp, intakeconstants.slapdownDownKi, intakeconstants.slapdownDownKd);
+        slapdownPID.setTolerance(intakeconstants.slapdownToleranceRad);
+        slapdownPID.enableContinuousInput(0, 2 * Math.PI);
         count = 1;
     }
     public void slapdownup(){
         slapdowntarget = intakeconstants.slapdownUpAngleRad;
+        slapdownPID = new PIDController(intakeconstants.slapdownUpKp, intakeconstants.slapdownUpKi, intakeconstants.slapdownUpKd);
+        slapdownPID.setTolerance(intakeconstants.slapdownToleranceRad);
+        slapdownPID.enableContinuousInput(0, 2 * Math.PI);
         count = 0;
     }
+
+    public void slapdowntoggle(){
+        if (Math.abs(slapdownencoder.getPosition() - intakeconstants.slapdownUpAngleRad) < intakeconstants.slapdownToleranceRad) {
+            slapdowndown();
+        } else {
+            slapdownup();
+        }
+    }
+
     public boolean slapdownattarget(){ //not used for now maybe will come in hand later trust
         return slapdownPID.atSetpoint();
     }
