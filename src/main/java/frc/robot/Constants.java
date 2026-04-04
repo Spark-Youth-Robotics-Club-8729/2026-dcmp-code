@@ -26,8 +26,11 @@ public final class Constants {
   public static final class DriveConstants {
     // Driving Parameters - Note that these are not the maximum capable speeds of
     // the robot, rather the allowed maximum speeds
-    public static final double kMaxSpeedMetersPerSecond = 0.1;
-    public static final double kMaxAngularSpeed = 2 * Math.PI; // radians per second
+
+    // Use 0.8 for speed scale at comp, 0.5 for testing.
+    public static final double speedscale = 0.5; // Allows the speeds to be scaled without touching the proportions of numbers. 
+    public static final double kMaxSpeedMetersPerSecond = 1 * speedscale;
+    public static final double kMaxAngularSpeed = 0.5 * Math.PI * speedscale; // radians per second
     
     public static final double kP = 1.4;
     public static final double kI = 0.4;
@@ -172,16 +175,16 @@ public final class Constants {
     public static final int kSlapdownID = 21;
     public static final double slapdowngearratio = 45;
     // Slapdown angle limits (radians, at the mechanism after gear reduction)
-    public static final double slapdownUpAngleRad = 0; // TODO: Set actual
-    public static final double slapdownDownAngleRad =
-        1.6; // TODO: Set actual
+    // Top position wraps around 2π/0, so use a value near 0 or 2π
+    public static final double slapdownUpAngleRad = 0.0; // Top position (near 0/2π)
+    public static final double slapdownDownAngleRad = 1.6; // Down position
 
     // Slapdown PID gains (separate for each mode so they can be tuned independently)
-    public static final double slapdownUpKp = 0.5; // TODO: Tune
-    public static final double slapdownUpKd = 0.15; // TODO: Tune
+    public static final double slapdownUpKp = 0.05; // TODO: Tune (increased from 0.001)
+    public static final double slapdownUpKd = 0.05; // TODO: Tune
 
-    public static final double slapdownDownKp = 0.15; // TODO: Tune
-    public static final double slapdownDownKd = 0.8; // TODO: Tune
+    public static final double slapdownDownKp = 0.1; // TODO: Tune (increased from 0.001)
+    public static final double slapdownDownKd = 0.05; // TODO: Tune
 
     public static final double slapdownJitterKp = 0.5; // TODO: Tune
     public static final double slapdownJitterKd = 0.5; // TODO: Tune
@@ -199,7 +202,7 @@ public final class Constants {
     public static final double rollerIntakeVolts = 6.0; // Reduced from 10.0 — TODO: Tune
     public static final double rollerOuttakeVolts = -4.0; // Reduced from -6.0 — TODO: Tune
 
-    // Jitter constans
+    // Jitter constansts
     public static final double jitterFrequencyHz = 0.25; // Tune
     public static final double jitterAmplitudeDeg = 45.0; // Tune
 
