@@ -26,11 +26,13 @@ public final class Constants {
   public static final class DriveConstants {
     // Driving Parameters - Note that these are not the maximum capable speeds of
     // the robot, rather the allowed maximum speeds
+    public static final double kMaxSpeedMetersPerSecond = 0.1;
 
-    // Use 0.8 for speed scale at comp, 0.5 for testing.
-    public static final double speedscale = 0.5; // Allows the speeds to be scaled without touching the proportions of numbers. 
-    public static final double kMaxSpeedMetersPerSecond = 1 * speedscale;
-    public static final double kMaxAngularSpeed = 0.5 * Math.PI * speedscale; // radians per second
+    public static final double kTrackRadiusMeters =
+    Math.sqrt(Math.pow(13.5 * 0.0254, 2) + Math.pow(13.5 * 0.0254, 2));
+    
+public static final double kMaxAngularSpeed =
+kMaxSpeedMetersPerSecond / kTrackRadiusMeters; // radians per second
     
     public static final double kP = 1.4;
     public static final double kI = 0.4;
