@@ -218,6 +218,34 @@ public class RobotContainer {
                 m_shooterSubsystem.stopFeeder();
                 m_indexerSubsystem.stopindexer();
             },m_shooterSubsystem,m_indexerSubsystem));
+
+        new JoystickButton(m_operatorController, XboxController.Button.kX.value)
+            .whileTrue(Commands.startEnd(
+                () -> {
+                    m_shooterSubsystem.ejectNote();
+                    m_shooterSubsystem.setFlywheelVelocities(-ShooterConstants.defaultFlywheelSpeedRPM, -ShooterConstants.defaultFlywheelSpeedRPM);
+                    m_indexerSubsystem.reverse();
+                },
+                () -> {
+                    m_shooterSubsystem.stopFeeder();
+                    m_shooterSubsystem.setFlywheelVelocities(0, 0);
+                    m_indexerSubsystem.stopindexer();
+                },
+                m_shooterSubsystem, m_indexerSubsystem
+            ));
+            
+        // new POVButton(m_operatorController, 0)
+        //     .onTrue(Commands.runOnce(()->{
+        //         m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMaxAngleRad);
+        //     }, m_shooterSubsystem));
+
+        // new POVButton(m_operatorController, 180)
+        //     .onTrue(Commands.runOnce(()->{
+        //         m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
+        //     }, m_shooterSubsystem));
+
+
+
     }
         
 
