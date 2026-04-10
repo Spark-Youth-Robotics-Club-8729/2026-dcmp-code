@@ -9,6 +9,9 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
+import java.util.Set;
 
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide
@@ -28,12 +31,10 @@ public final class Constants {
     // the robot, rather the allowed maximum speeds
     public static final double kMaxSpeedMetersPerSecond = 0.1;
 
-    public static final double kTrackRadiusMeters =
-    Math.sqrt(Math.pow(13.5 * 0.0254, 2) + Math.pow(13.5 * 0.0254, 2));
-    
-public static final double kMaxAngularSpeed =
-kMaxSpeedMetersPerSecond / kTrackRadiusMeters; // radians per second
-    
+    public static final double kTrackRadiusMeters = Math.sqrt(Math.pow(13.5 * 0.0254, 2) + Math.pow(13.5 * 0.0254, 2));
+
+    public static final double kMaxAngularSpeed = kMaxSpeedMetersPerSecond / kTrackRadiusMeters; // radians per second
+
     public static final double kP = 1.4;
     public static final double kI = 0.4;
     public static final double kD = 0.2;
@@ -41,7 +42,7 @@ kMaxSpeedMetersPerSecond / kTrackRadiusMeters; // radians per second
     public static final double kPSnap = 0.02;
     public static final double kISnap = 0.0;
     public static final double kDSnap = 0.002;
-    public static final double snapTolerance = 10.0; //degrees
+    public static final double snapTolerance = 10.0; // degrees
 
     // Chassis configuration
     public static final double kTrackWidth = Units.inchesToMeters(26.5);
@@ -74,13 +75,15 @@ kMaxSpeedMetersPerSecond / kTrackRadiusMeters; // radians per second
 
     public static final boolean kGyroReversed = false;
   }
-  public static final class indexerconstants{
+
+  public static final class indexerconstants {
 
     public static final int kIndexerCanId = 22;
     public static final double gearratio = 4.0;
     public static final double feedVolts = 6.0;
     public static final double reverseVolts = -4.0;
   }
+
   public static final class ShooterConstants {
     // CAN IDs
     public static final int leftFlywheelID = 10;
@@ -95,12 +98,14 @@ kMaxSpeedMetersPerSecond / kTrackRadiusMeters; // radians per second
     // Flywheel: 1:1 direct drive
     public static final double flywheelGearRatio = 1.0;
 
-    // Hood pivot: 13.7778:1  (13.7778 motor rotations = 1 degree of hood travel)
+    // Hood pivot: 13.7778:1 (13.7778 motor rotations = 1 degree of hood travel)
     // TalonFX SensorToMechanismRatio expects motor-rotations / mechanism-rotations.
-    // 13.7778 motor degrees per hood degree = 13.7778 motor rotations per hood rotation.
+    // 13.7778 motor degrees per hood degree = 13.7778 motor rotations per hood
+    // rotation.
     public static final double hoodGearRatio = 13.7778;
 
-    // Feeder (green wheels, hopper→shooter): 1:1.375  (1 motor rotation = 1.375 mechanism rotations)
+    // Feeder (green wheels, hopper→shooter): 1:1.375 (1 motor rotation = 1.375
+    // mechanism rotations)
     // Stored as motor-rotations / mechanism-rotations for SensorToMechanismRatio.
     public static final double feederGearRatio = 1.0 / 1.375; // ≈ 0.7273
 
@@ -108,16 +113,18 @@ kMaxSpeedMetersPerSecond / kTrackRadiusMeters; // radians per second
     // Flywheel physical constants
     // ---------------------------------------------------------------------------
     // Combined MOI of flywheel assembly (flywheel, shooter wheels, shaft, pulleys)
-    // 16.436 in²·lb  →  kg·m²
-    public static final double flywheelMOI =
-        Units.lbsToKilograms(16.436 * Units.inchesToMeters(1.0) * Units.inchesToMeters(1.0));
+    // 16.436 in²·lb → kg·m²
+    public static final double flywheelMOI = Units
+        .lbsToKilograms(16.436 * Units.inchesToMeters(1.0) * Units.inchesToMeters(1.0));
     // Equivalent: 16.436 * 0.000292639 ≈ 0.004809 kg·m²
 
-    // Radius of the flywheel wheel that contacts the note (used for physics-based RPM calculation).
+    // Radius of the flywheel wheel that contacts the note (used for physics-based
+    // RPM calculation).
     // TODO: Set to the actual shooter wheel radius.
     public static final double flywheelWheelRadiusM = Units.inchesToMeters(2.0);
 
-    // Height of the shooter exit point above the floor (used for projectile Δh calculation).
+    // Height of the shooter exit point above the floor (used for projectile Δh
+    // calculation).
     // TODO: Measure on the actual robot.
     public static final double shooterExitHeightM = Units.inchesToMeters(24.0);
 
@@ -158,8 +165,7 @@ kMaxSpeedMetersPerSecond / kTrackRadiusMeters; // radians per second
     // Tolerances
     // ---------------------------------------------------------------------------
     public static final double flywheelToleranceRPM = 100; // widened 50 to 100 RPM while tuning
-    public static final double hoodToleranceRad =
-        Units.degreesToRadians(5.0); // Widened from 3° to 5° while tuning
+    public static final double hoodToleranceRad = Units.degreesToRadians(5.0); // Widened from 3° to 5° while tuning
 
     // ---------------------------------------------------------------------------
     // Default / feeder speeds
@@ -172,7 +178,8 @@ kMaxSpeedMetersPerSecond / kTrackRadiusMeters; // radians per second
     // Negative = ejects ball back down toward hopper
     public static final double feederEjectSpeedRPM = -500.0;
   }
-  public static final class intakeconstants{
+
+  public static final class intakeconstants {
     public static final int kRollerID = 20;
     public static final int kSlapdownID = 21;
     public static final double slapdowngearratio = 45;
@@ -181,7 +188,8 @@ kMaxSpeedMetersPerSecond / kTrackRadiusMeters; // radians per second
     public static final double slapdownUpAngleRad = 0.0; // Top position (near 0/2π)
     public static final double slapdownDownAngleRad = 1.6; // Down position
 
-    // Slapdown PID gains (separate for each mode so they can be tuned independently)
+    // Slapdown PID gains (separate for each mode so they can be tuned
+    // independently)
     public static final double slapdownUpKp = 0.08; // TODO: Tune (increased from 0.001)
     public static final double slapdownUpKi = 0.0; // TODO: Tune
     public static final double slapdownUpKd = 0.0; // TODO: Tune
@@ -210,23 +218,23 @@ kMaxSpeedMetersPerSecond / kTrackRadiusMeters; // radians per second
     public static final double jitterFrequencyHz = 0.25; // Tune
     public static final double jitterAmplitudeDeg = 45.0; // Tune
 
+  }
 
-    }
-    public static final class ModuleConstants {
-      // The MAXSwerve module can be configured with one of three pinion gears: 12T,
-      // 13T, or 14T. This changes the drive speed of the module (a pinion gear with
-      // more teeth will result in a robot that drives faster).
-      public static final int kDrivingMotorPinionTeeth = 12;
+  public static final class ModuleConstants {
+    // The MAXSwerve module can be configured with one of three pinion gears: 12T,
+    // 13T, or 14T. This changes the drive speed of the module (a pinion gear with
+    // more teeth will result in a robot that drives faster).
+    public static final int kDrivingMotorPinionTeeth = 12;
 
-      // Calculations required for driving motor conversion factors and feed forward
-      public static final double kDrivingMotorFreeSpeedRps = NeoMotorConstants.kFreeSpeedRpm / 60;
-      public static final double kWheelDiameterMeters = 0.0762;
-      public static final double kWheelCircumferenceMeters = kWheelDiameterMeters * Math.PI;
-      // 45 teeth on the wheel's bevel gear, 22 teeth on the first-stage spur gear, 15
-      // teeth on the bevel pinion
-      public static final double kDrivingMotorReduction = (45.0 * 22) / (kDrivingMotorPinionTeeth * 15);
-      public static final double kDriveWheelFreeSpeedRps = (kDrivingMotorFreeSpeedRps * kWheelCircumferenceMeters)
-          / kDrivingMotorReduction;
+    // Calculations required for driving motor conversion factors and feed forward
+    public static final double kDrivingMotorFreeSpeedRps = NeoMotorConstants.kFreeSpeedRpm / 60;
+    public static final double kWheelDiameterMeters = 0.0762;
+    public static final double kWheelCircumferenceMeters = kWheelDiameterMeters * Math.PI;
+    // 45 teeth on the wheel's bevel gear, 22 teeth on the first-stage spur gear, 15
+    // teeth on the bevel pinion
+    public static final double kDrivingMotorReduction = (45.0 * 22) / (kDrivingMotorPinionTeeth * 15);
+    public static final double kDriveWheelFreeSpeedRps = (kDrivingMotorFreeSpeedRps * kWheelCircumferenceMeters)
+        / kDrivingMotorReduction;
   }
 
   public static final class OIConstants {
@@ -254,7 +262,21 @@ kMaxSpeedMetersPerSecond / kTrackRadiusMeters; // radians per second
     public static final double kFreeSpeedRpm = 5676;
   }
 
+  public static final class VisionConstants {
+    public static final String CAMERA_NAME = "limelight";
 
-  
+    public static final AprilTagFieldLayout LAYOUT = AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
+
+    // Tags to ignore for pose estimation
+    public static final Set<Integer> BLOCKED_TAG_IDS = Set.of(9, 25, 18, 5, 2, 21);
+
+    // Hub Tags for scoring calculations
+    public static final Set<Integer> RED_HUB_TAGS = Set.of(8, 10, 3, 4, 11);
+    public static final Set<Integer> BLUE_HUB_TAGS = Set.of(27, 26, 24, 20, 19);
+
+    // Trust MegaTag2 with 1 tag, MegaTag1 with 2+
+    public static final int MT1_MIN_TAGS = 2;
+    public static final int MT2_MIN_TAGS = 1;
+  }
 
 }

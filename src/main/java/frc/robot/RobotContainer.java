@@ -10,6 +10,7 @@ import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
@@ -26,9 +27,10 @@ import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.IndexerSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.VisionSubsystem;
+import frc.robot.subsystems.ShotCalculator;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
@@ -36,6 +38,8 @@ import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.POVButton;
 
 import java.util.List;
+import java.util.function.Supplier;
+
 import frc.robot.command.SystemTestCommand;
 
 /*
@@ -50,6 +54,7 @@ public class RobotContainer {
   private final IndexerSubsystem m_indexerSubsystem = new IndexerSubsystem();
   private final IntakeSubsystem m_intakeSubsystem = new IntakeSubsystem();
   private final ShooterSubsystem m_shooterSubsystem = new ShooterSubsystem();
+  private final VisionSubsystem m_visionSubsystem = new VisionSubsystem(() -> Rotation2d.fromDegrees(m_robotDrive.getHeading()),null);
   // The driver's controller
   XboxController m_driverController = new XboxController(OIConstants.kDriverControllerPort);
   XboxController m_operatorController = new XboxController(OIConstants.kOperatorControllerPort);
@@ -61,6 +66,9 @@ public class RobotContainer {
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
   public RobotContainer() {
+    // Initialize shot calculator
+    ShotCalculator.initialize(m_robotDrive::getPose, m_robotDrive::getVelocity, m_visionSubsystem.getAllianceHubPosition());
+
     // Configure the button bindings
     configureButtonBindings();
 
@@ -193,8 +201,6 @@ public class RobotContainer {
             },m_intakeSubsystem));
 
 
-
-        //shooter
         new Trigger(()->m_operatorController.getLeftTriggerAxis()>0.5)//passing
             .whileTrue(Commands.startEnd(() -> {
                 m_shooterSubsystem.setFlywheelVelocities(ShooterConstants.maxFlywheelSpeedRPM-1500, ShooterConstants.defaultFlywheelSpeedRPM);
@@ -207,17 +213,38 @@ public class RobotContainer {
                 m_indexerSubsystem.stopindexer();
             },m_shooterSubsystem,m_indexerSubsystem));
 
-        new Trigger(()->m_operatorController.getRightTriggerAxis()>0.5)//shooting, need to add calculator and hood 
-            .whileTrue(Commands.startEnd(() -> {
-                m_shooterSubsystem.setFlywheelVelocities(ShooterConstants.defaultFlywheelSpeedRPM, ShooterConstants.defaultFlywheelSpeedRPM);
-                m_shooterSubsystem.feedNote();
-                m_indexerSubsystem.index();
-            }, 
-            ()->{
-                m_shooterSubsystem.setFlywheelVelocities(0, 0);
-                m_shooterSubsystem.stopFeeder();
-                m_indexerSubsystem.stopindexer();
-            },m_shooterSubsystem,m_indexerSubsystem));
+        // shooter with shot calculator
+        // both rpm and hood angle are auto adjusted based on distance to target using
+        // pose and vision
+        new Trigger(() -> m_operatorController.getRightTriggerAxis() > 0.5)
+                .whileTrue(Commands.run(() -> {
+                    // Get distance — prefer vision if hub tags are visible, fall back to pose
+                    ShotCalculator.ShootingParameters params;
+                    if (m_visionSubsystem.hasHubTarget()) {
+                        double dist = m_visionSubsystem.getDistanceToHub();
+                        Rotation2d driveAngle = m_visionSubsystem.getAllianceHubPosition()
+                                .minus(m_robotDrive.getPose().getTranslation()).getAngle();
+                        params = ShotCalculator.getInstance().calculateFromDistance(dist, driveAngle);
+                    } else {
+                        params = ShotCalculator.getInstance().calculate();
+                    }
+
+                    // Apply hood and flywheel
+                    m_shooterSubsystem.setHoodPosition(params.hoodAngleRad());
+                    m_shooterSubsystem.setFlywheelVelocities(params.flywheelSpeedRPM(), params.flywheelSpeedRPM());
+
+                    // Only feed once flywheels and hood are ready
+                    if (m_shooterSubsystem.isReadyToShoot()) {
+                        m_shooterSubsystem.feedNote();
+                        m_indexerSubsystem.index();
+                    }
+                }, m_shooterSubsystem, m_indexerSubsystem)
+                        .finallyDo(() -> {
+                            m_shooterSubsystem.setFlywheelVelocities(0, 0);
+                            m_shooterSubsystem.stopFeeder();
+                            m_indexerSubsystem.stopindexer();
+                            ShotCalculator.getInstance().clearParameters();
+                        }));
 
         new JoystickButton(m_operatorController, XboxController.Button.kX.value)
             .whileTrue(Commands.startEnd(
