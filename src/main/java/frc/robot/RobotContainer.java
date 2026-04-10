@@ -213,33 +213,47 @@ public class RobotContainer {
                 m_indexerSubsystem.stopindexer();
             },m_shooterSubsystem,m_indexerSubsystem));
 
-        // shooter with shot calculator
-        // both rpm and hood angle are auto adjusted based on distance to target using
-        // pose and vision
+        // Shooter with shot calculator — auto-adjusts RPM and hood angle based on distance to target
+        // Uses vision (AprilTags) if available, falls back to pose estimation
         new Trigger(() -> m_operatorController.getRightTriggerAxis() > 0.5)
                 .whileTrue(Commands.run(() -> {
-                    // Get distance — prefer vision if hub tags are visible, fall back to pose
+                    // Determine shooting parameters based on target detection
+                    // Prefer vision if hub tags are visible; fall back to pose-based calculation if not
                     ShotCalculator.ShootingParameters params;
                     if (m_visionSubsystem.hasHubTarget()) {
+                        // calculate parameters from actual distance to hub
                         double dist = m_visionSubsystem.getDistanceToHub();
                         Rotation2d driveAngle = m_visionSubsystem.getAllianceHubPosition()
                                 .minus(m_robotDrive.getPose().getTranslation()).getAngle();
                         params = ShotCalculator.getInstance().calculateFromDistance(dist, driveAngle);
                     } else {
-                        params = ShotCalculator.getInstance().calculate();
+                        // No tag detected: use minimum hood angle and RPM values for safety
+                        // This prevents shooting at high angles/speeds when target isn't visible
+                        m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
+                        m_shooterSubsystem.setFlywheelVelocities(
+                            ShooterConstants.defaultFlywheelSpeedRPM, 
+                            ShooterConstants.defaultFlywheelSpeedRPM);
+                        
+                        // Still check if ready to shoot and feed the note
+                        if (m_shooterSubsystem.isReadyToShoot()) {
+                            m_shooterSubsystem.feedNote();
+                            m_indexerSubsystem.index();
+                        }
+                        return;
                     }
 
-                    // Apply hood and flywheel
+                    // Apply calculated hood angle and flywheel RPM values
                     m_shooterSubsystem.setHoodPosition(params.hoodAngleRad());
                     m_shooterSubsystem.setFlywheelVelocities(params.flywheelSpeedRPM(), params.flywheelSpeedRPM());
 
-                    // Only feed once flywheels and hood are ready
+                    // Only feed the note once both flywheels and hood are at target values
                     if (m_shooterSubsystem.isReadyToShoot()) {
                         m_shooterSubsystem.feedNote();
                         m_indexerSubsystem.index();
                     }
                 }, m_shooterSubsystem, m_indexerSubsystem)
                         .finallyDo(() -> {
+                            // stop all shooter mechanisms when trigger is released
                             m_shooterSubsystem.setFlywheelVelocities(0, 0);
                             m_shooterSubsystem.stopFeeder();
                             m_indexerSubsystem.stopindexer();
