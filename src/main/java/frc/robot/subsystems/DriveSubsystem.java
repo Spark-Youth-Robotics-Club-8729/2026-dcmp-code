@@ -237,4 +237,10 @@ public class DriveSubsystem extends SubsystemBase {
   public double getTurnRate() {
     return m_gyro.getRate() * (DriveConstants.kGyroReversed ? -1.0 : 1.0);
   }
+
+  public AHRS getGyro() {
+    // Return your gyro object directly. 
+    // WPILib gyro classes implement 'Sendable', which Elastic needs.
+    return m_gyro; 
+}
 }

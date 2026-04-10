@@ -3,11 +3,11 @@
 // the WPILib BSD license file in the root directory of this project.
 
 package frc.robot;
-
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
  * each mode, as described in the TimedRobot documentation. If you change the name of this class or
@@ -18,6 +18,16 @@ public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
 
   private RobotContainer m_robotContainer;
+
+  private double getShiftTimeRemaining(double matchTime) {
+
+    if (matchTime > 130) return matchTime - 130;
+    else if (matchTime > 105) return matchTime - 105;
+    else if (matchTime > 80) return matchTime - 80;
+    else if (matchTime > 55) return matchTime - 55;
+    else if (matchTime > 30) return matchTime - 30;
+    else return matchTime;
+}
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -30,23 +40,52 @@ public class Robot extends TimedRobot {
     m_robotContainer = new RobotContainer();
   }
 
-  /**
-   * This function is called every 20 ms, no matter the mode. Use this for items like diagnostics
-   * that you want ran during disabled, autonomous, teleoperated and test.
-   *
-   * <p>This runs after the mode specific periodic functions, but before LiveWindow and
-   * SmartDashboard integrated updating.
-   */
+
   @Override
   public void robotPeriodic() {
+
     // Runs the Scheduler.  This is responsible for polling buttons, adding newly-scheduled
     // commands, running already-scheduled commands, removing finished or interrupted commands,
     // and running subsystem periodic() methods.  This must be called from the robot's periodic
     // block in order for anything in the Command-based framework to work.
     CommandScheduler.getInstance().run();
-  }
 
-  /** This function is called once each time the robot enters Disabled mode. */
+    var robotPose = m_robotContainer.getDriveSubsystem().getPose();
+        
+    NetworkValues.getInstance().periodic(robotPose);
+
+    double matchTime = DriverStation.getMatchTime();
+    if (matchTime < 0) matchTime = 0;
+
+    SmartDashboard.putNumber("Match Time", matchTime);
+
+    double shiftTime = getShiftTimeRemaining(matchTime);
+    SmartDashboard.putNumber("Shift Time Left", shiftTime);
+
+    SmartDashboard.putBoolean("Hub Active", NetworkValues.getInstance().isHubActive());
+
+    String shift;
+
+    if (DriverStation.isAutonomous()) {
+        shift = "Autonomous";
+    } 
+
+    else if (matchTime > 130) {
+        shift = "Transition"; 
+    } else if (matchTime > 105) {
+        shift = "Shift 1";
+    } else if (matchTime > 80) {
+        shift = "Shift 2";
+    } else if (matchTime > 55) {
+        shift = "Shift 3";
+    } else if (matchTime > 30) {
+        shift = "Shift 4";
+    } else {
+        shift = "Endgame";
+    }
+
+    SmartDashboard.putString("Current Shift", shift);
+}
   @Override
   public void disabledInit() {}
 

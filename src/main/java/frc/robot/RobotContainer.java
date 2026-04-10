@@ -15,6 +15,8 @@ import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj.PS4Controller.Button;
 import frc.robot.Constants.AutoConstants;
@@ -56,12 +58,19 @@ public class RobotContainer {
   boolean m_fieldRelative = true;
 
   private final PIDController m_snapController = new PIDController(DriveConstants.kPSnap, DriveConstants.kISnap, DriveConstants.kDSnap);
+  private final SendableChooser<Command> m_chooser = new SendableChooser<>();
+  private final NetworkValues networkValues = NetworkValues.getInstance();
+
+  public DriveSubsystem getDriveSubsystem() {
+        return m_robotDrive;
+    }
 
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
   public RobotContainer() {
     // Configure the button bindings
+    SmartDashboard.putData("Robot Gyro", m_robotDrive.getGyro());
     configureButtonBindings();
 
     // Configure default commands
