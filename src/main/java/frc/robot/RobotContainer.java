@@ -14,6 +14,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -63,9 +64,13 @@ public class RobotContainer {
   // The driver's controller
   XboxController m_driverController = new XboxController(OIConstants.kDriverControllerPort);
   XboxController m_operatorController = new XboxController(OIConstants.kOperatorControllerPort);
-  //boolean m_fieldRelative = true; (controlled with b and set by network values )
+  boolean m_fieldRelative = true;
 
   private final PIDController m_snapController = new PIDController(DriveConstants.kPSnap, DriveConstants.kISnap, DriveConstants.kDSnap);
+
+  private double speed_Offense_Defense = 1.0;  // starts at offense regular speed
+  private final double offense_speed = 1.0;
+  private final double defense_speed = 1.7;  // 30% times faster than offense
 
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
@@ -83,10 +88,10 @@ public class RobotContainer {
         // Turning is controlled by the X axis of the right stick.
         new RunCommand(
             () -> m_robotDrive.drive(
-                -MathUtil.applyDeadband(m_driverController.getLeftY(), OIConstants.kDriveDeadband),
-                -MathUtil.applyDeadband(m_driverController.getLeftX(), OIConstants.kDriveDeadband),
+                -MathUtil.applyDeadband(m_driverController.getLeftY(), OIConstants.kDriveDeadband) * speed_Offense_Defense,
+                -MathUtil.applyDeadband(m_driverController.getLeftX(), OIConstants.kDriveDeadband) * speed_Offense_Defense,
                 -MathUtil.applyDeadband(m_driverController.getRightX(), OIConstants.kDriveDeadband),
-                NetworkValues.getInstance().isFieldRelative()),
+                m_fieldRelative),
             m_robotDrive));
   }
 
@@ -108,7 +113,7 @@ public class RobotContainer {
          * - LT (Left Trigger) .... Reset Gyro to 0 (works!)
          * - A Button ............. Snap to 0° (works!)
          * - X ... Lock Wheels to X (works!)
-         * - POV Down ............. Reset Hood to 0 (havent tested yet)
+         * - POV Down ............. Reset Hood to 0 (does not work)
          * - POV Up ............... Test Everything (works!)
          * ----------------------------------------------
          * OPERATOR CONTROLS (Port 1)
@@ -133,51 +138,63 @@ public class RobotContainer {
 
         // Single press of Start button zeroes the gyro heading
         new JoystickButton(m_driverController, XboxController.Button.kA.value)
-            .whileTrue(new RunCommand(() -> {
-                System.out.println("Zeroing gyro!");
-                m_robotDrive.zeroHeading();
-            }, m_robotDrive));
-
-        // In configureButtonBindings()
-        new JoystickButton(m_driverController, XboxController.Button.kB.value)
-            .onTrue(new InstantCommand(() ->
-        {
-             m_fieldRelative = !m_fieldRelative;
-             NetworkValues.getInstance().setFieldRelative(m_fieldRelative);
-             System.out.println("Field Relative equals "+m_fieldRelative);
-        }
-             ));
-
-        new POVButton(m_driverController, 0)   // change to pov Up later cuz im too lazy
-            .onTrue(new SystemTestCommand(m_robotDrive));
-
-        new JoystickButton(m_driverController, XboxController.Button.kY.value)    // change to pov Up later cuz im too lazy
-            .onTrue(new SystemTestCommand(m_robotDrive));
-
-        new Trigger(() -> m_driverController.getLeftTriggerAxis() > 0.5)
-            .whileTrue(new RunCommand(() -> {
+         .whileTrue(new RunCommand(() -> {
                 double heading = m_robotDrive.getHeading();
-                System.out.println("Heading: " + heading);   // we love debug prints
+                //System.out.println("Heading: " + heading);   // we love debug prints
                 if (Math.abs(heading) < DriveConstants.snapTolerance) {  // if heading within tolerance, it wont move
                     double snapOutput = 0;
                     m_robotDrive.drive(
                         -MathUtil.applyDeadband(m_driverController.getLeftY(), OIConstants.kDriveDeadband),
                         -MathUtil.applyDeadband(m_driverController.getLeftX(), OIConstants.kDriveDeadband),
                         snapOutput,
-                        NetworkValues.getInstance().isFieldRelative());
+                        m_fieldRelative);
                 } else {
                     double snapOutput = m_snapController.calculate(heading, 0);
                     m_robotDrive.drive(
                         -MathUtil.applyDeadband(m_driverController.getLeftY(), OIConstants.kDriveDeadband),
                         -MathUtil.applyDeadband(m_driverController.getLeftX(), OIConstants.kDriveDeadband),
                         snapOutput,
-                        NetworkValues.getInstance().isFieldRelative());
+                        m_fieldRelative);
                 }
             }, m_robotDrive));
 
 
+        // In configureButtonBindings()
+        new JoystickButton(m_driverController, XboxController.Button.kB.value)
+            .onTrue(new InstantCommand(() ->
+        {
+             m_fieldRelative = !m_fieldRelative;
+             System.out.println("Driving field relative is "+m_fieldRelative);
+        }
+             ));
 
-        //Operator               
+        new POVButton(m_driverController, 0)   
+            .onTrue(new SystemTestCommand(m_robotDrive));
+
+        new POVButton(m_driverController, 180) 
+            .onTrue(new InstantCommand(() ->
+        {
+            if (speed_Offense_Defense == offense_speed) {
+                speed_Offense_Defense = defense_speed;
+            }
+            else {
+                speed_Offense_Defense = offense_speed;
+            }
+            System.out.println("speed multiplier" + speed_Offense_Defense);
+        }
+             ));
+
+        new JoystickButton(m_driverController, XboxController.Button.kY.value)    
+            .onTrue(new SystemTestCommand(m_robotDrive));
+
+        new Trigger(() -> m_driverController.getLeftTriggerAxis() > 0.5)
+           .whileTrue(new RunCommand(() -> {
+                System.out.println("Zeroing gyro!");
+                m_robotDrive.zeroHeading();
+            }, m_robotDrive));
+
+            
+        // OPERATOR ------------------------------------------           
         
         //intake
         new JoystickButton(m_operatorController, XboxController.Button.kRightBumper.value)
@@ -185,6 +202,12 @@ public class RobotContainer {
 
         new JoystickButton(m_operatorController, XboxController.Button.kLeftBumper.value)
            .whileTrue(Commands.startEnd(() -> m_intakeSubsystem.outtake(), ()->m_intakeSubsystem.stopintake()));
+
+        new JoystickButton(m_operatorController, XboxController.Button.kY.value)
+           .whileTrue(Commands.startEnd(() -> m_shooterSubsystem.feedNote(), ()->m_shooterSubsystem.stopFeeder()));
+
+        new JoystickButton(m_operatorController, XboxController.Button.kB.value)
+           .whileTrue(Commands.startEnd(() -> m_indexerSubsystem.setVoltage(6), ()->m_indexerSubsystem.stopindexer()));
 
         new POVButton(m_operatorController, 180)
             .onTrue(Commands.runOnce(()->{
@@ -197,25 +220,44 @@ public class RobotContainer {
                 //m_intakeSubsystem.slapdowntoggle();
             },m_intakeSubsystem));
         
-        new POVButton(m_operatorController, 90)
-            .onTrue(Commands.runOnce(()->{
-                m_intakeSubsystem.slapdowndown();
-            },m_intakeSubsystem));
-        new POVButton(m_operatorController, 270)
-            .onTrue(Commands.runOnce(()->{
-                m_intakeSubsystem.slapdownup();
-            },m_intakeSubsystem));
 
+        // new POVButton(m_operatorController, 90)
+        //     .onTrue(Commands.runOnce(()->{
+        //         m_intakeSubsystem.slapdowndown();
+        //     },m_intakeSubsystem));
 
-            //passing
-        new Trigger(()->m_operatorController.getLeftTriggerAxis()>0.5)
+    //down arrow does up and down, right arrow does slapdown DOWN and left arrow does slapdown UP
+        // new POVButton(m_operatorController, 270)
+        //     .onTrue(Commands.runOnce(()->{
+        //         m_intakeSubsystem.slapdownup();
+        //     },m_intakeSubsystem));
+        
+        // passing from neutral zone to alliance zone
+        new POVButton(m_operatorController, 0)
             .whileTrue(Commands.startEnd(() -> {
-                m_shooterSubsystem.setFlywheelVelocities(NetworkValues.getInstance().getFlywheelRPM(), NetworkValues.getInstance().getDefaultFlywheelRPM());
+                m_shooterSubsystem.setFlywheelVelocities(NetworkValues.getInstance().getFlywheelRPM() - 1000, NetworkValues.getInstance().getFlywheelRPM() - 1000);
+                m_shooterSubsystem.setHoodPosition(Units.degreesToRadians(20.0));
                 m_shooterSubsystem.feedNote();
                 m_indexerSubsystem.index();
             }, 
             ()->{
                 m_shooterSubsystem.setFlywheelVelocities(0, 0);
+                m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
+                m_shooterSubsystem.stopFeeder();
+                m_indexerSubsystem.stopindexer();
+            },m_shooterSubsystem,m_indexerSubsystem));
+
+        //cross court passing from alliance zone to alliance zone
+        new Trigger(()->m_operatorController.getLeftTriggerAxis()>0.5)
+            .whileTrue(Commands.startEnd(() -> {
+                m_shooterSubsystem.setFlywheelVelocities(NetworkValues.getInstance().getFlywheelRPM(), NetworkValues.getInstance().getFlywheelRPM());
+                m_shooterSubsystem.setHoodPosition(Units.degreesToRadians(30.0));    //maybe lower this
+                m_shooterSubsystem.feedNote();
+                m_indexerSubsystem.index();
+            }, 
+            ()->{
+                m_shooterSubsystem.setFlywheelVelocities(0, 0);
+                m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
                 m_shooterSubsystem.stopFeeder();
                 m_indexerSubsystem.stopindexer();
             },m_shooterSubsystem,m_indexerSubsystem));
@@ -227,19 +269,23 @@ public class RobotContainer {
                     // Determine shooting parameters based on target detection
                     // Prefer vision if hub tags are visible; fall back to pose-based calculation if not
                     ShotCalculator.ShootingParameters params;
+
+                    System.out.println("using vision is "+m_visionSubsystem.hasHubTarget());
                     if (m_visionSubsystem.hasHubTarget()) {
                         // calculate parameters from actual distance to hub
-                        double dist = m_visionSubsystem.getDistanceToHub();
+                        double dist = m_visionSubsystem.getDistanceToHub() - 1.2;
+                        System.out.println("Distance to hub: " + dist);
                         Rotation2d driveAngle = m_visionSubsystem.getAllianceHubPosition()
                                 .minus(m_robotDrive.getPose().getTranslation()).getAngle();
                         params = ShotCalculator.getInstance().calculateFromDistance(dist, driveAngle);
-                    } else {
+                        //lastAngle = params.hoodAngleRad();
+                    }   
+                    else {
                         // No tag detected: use minimum hood angle and RPM values for safety
                         // This prevents shooting at high angles/speeds when target isn't visible
                         m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
                         m_shooterSubsystem.setFlywheelVelocities(
-                            NetworkValues.getInstance().getDefaultFlywheelRPM(), 
-                            NetworkValues.getInstance().getDefaultFlywheelRPM());
+                            ShooterConstants.defaultFlywheelSpeedRPM, ShooterConstants.defaultFlywheelSpeedRPM);
                         
                         // Still check if ready to shoot and feed the note
                         if (m_shooterSubsystem.isReadyToShoot()) {
@@ -250,6 +296,9 @@ public class RobotContainer {
                     }
 
                     // Apply calculated hood angle and flywheel RPM values
+                    System.out.println("Delta hood angle: " + (Units.radiansToDegrees(params.hoodAngleRad()) - Units.radiansToDegrees(m_shooterSubsystem.getHoodPosition())));
+                    System.out.println("Delta flywheel RPM: " + (params.flywheelSpeedRPM() - m_shooterSubsystem.getAverageFlywheelVelocity()));
+
                     m_shooterSubsystem.setHoodPosition(params.hoodAngleRad());
                     m_shooterSubsystem.setFlywheelVelocities(params.flywheelSpeedRPM(), params.flywheelSpeedRPM());
 
@@ -262,6 +311,7 @@ public class RobotContainer {
                         .finallyDo(() -> {
                             // stop all shooter mechanisms when trigger is released
                             m_shooterSubsystem.setFlywheelVelocities(0, 0);
+                            m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
                             m_shooterSubsystem.stopFeeder();
                             m_indexerSubsystem.stopindexer();
                             ShotCalculator.getInstance().clearParameters();
@@ -282,15 +332,19 @@ public class RobotContainer {
                 m_shooterSubsystem, m_indexerSubsystem
             ));
             
-        // new POVButton(m_operatorController, 0)
-        //     .onTrue(Commands.runOnce(()->{
-        //         m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMaxAngleRad);
-        //     }, m_shooterSubsystem));
+        //bring hood up
+        new POVButton(m_operatorController, 90)
+             .onTrue(Commands.runOnce(()->{
+                 m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMaxAngleRad);
+                 System.out.println("Hood angle: " + Units.radiansToDegrees(m_shooterSubsystem.getHoodPosition()));
+             }, m_shooterSubsystem));
 
-        // new POVButton(m_operatorController, 180)
-        //     .onTrue(Commands.runOnce(()->{
-        //         m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
-        //     }, m_shooterSubsystem));
+             // bring hood down
+        new POVButton(m_operatorController, 270)
+             .onTrue(Commands.runOnce(()->{
+                 m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
+                 System.out.println("Hood angle: " + Units.radiansToDegrees(m_shooterSubsystem.getHoodPosition()));
+             }, m_shooterSubsystem)); 
 
 
 

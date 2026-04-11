@@ -10,7 +10,10 @@ import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkBase.ResetMode;
 
+
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -29,6 +32,10 @@ public class IntakeSubsystem extends SubsystemBase{
     private final TalonFX  intakemotor;
     private final SparkMax slapdownmotor;
     private final AbsoluteEncoder slapdownencoder;
+    private final Debouncer slapdownSettleDebouncer = new Debouncer(0.15, DebounceType.kRising);
+    // Detect bumper contact (stall) and stop driving the slapdown PID when we hit a hard stop
+    private final Debouncer slapdownStallDebouncer =
+            new Debouncer(0.15, DebounceType.kRising);
     private PIDController slapdownPID;
     private double slapdowntarget;
     public double commandVoltage;
@@ -54,14 +61,24 @@ public class IntakeSubsystem extends SubsystemBase{
     
     private final Alert  motordisconnect = new Alert("Intake motor disconnected", Alert.AlertType.kWarning);
 
+    
+
     public void periodic() {
-        
         double output = slapdownPID.calculate(slapdownencoder.getPosition(), slapdowntarget)*intakeconstants.slapdowngearratio;
+        
+        // Stall detection: if motor is stalled (high voltage, high current, low velocity), set output to 0
+        boolean slapdownStalled = slapdownStallDebouncer.calculate(
+            Math.abs(output) >= intakeconstants.slapdownStallAppliedVolts
+                && Math.abs(slapdownencoder.getVelocity()) <= intakeconstants.slapdownStallVelocityRadPerSec);
+        
+        if (slapdownStalled) {
+            output = 0;
+        }
         
         slapdownmotor.setVoltage(output);
 
-        System.out.println("current position: " + slapdownencoder.getPosition());
-        System.out.println("target: " + slapdowntarget);
+        //System.out.println("current position: " + slapdownencoder.getPosition());
+        //System.out.println("target: " + slapdowntarget);
 
         // use for logging and elastic in the future
     }
@@ -87,6 +104,7 @@ public class IntakeSubsystem extends SubsystemBase{
 
     //slapdown 
     public void slapdowndown(){
+        //sets the goal and the new PID
         slapdowntarget = intakeconstants.slapdownDownAngleRad;
         slapdownPID = new PIDController(intakeconstants.slapdownDownKp, intakeconstants.slapdownDownKi, intakeconstants.slapdownDownKd);
         slapdownPID.setTolerance(intakeconstants.slapdownToleranceRad);
@@ -94,6 +112,7 @@ public class IntakeSubsystem extends SubsystemBase{
         count = 1;
     }
     public void slapdownup(){
+        //sets the goal and the new PID
         slapdowntarget = intakeconstants.slapdownUpAngleRad;
         slapdownPID = new PIDController(intakeconstants.slapdownUpKp, intakeconstants.slapdownUpKi, intakeconstants.slapdownUpKd);
         slapdownPID.setTolerance(intakeconstants.slapdownToleranceRad);

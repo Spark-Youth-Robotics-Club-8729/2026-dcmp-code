@@ -29,7 +29,7 @@ public final class Constants {
   public static final class DriveConstants {
     // Driving Parameters - Note that these are not the maximum capable speeds of
     // the robot, rather the allowed maximum speeds
-    public static final double kMaxSpeedMetersPerSecond = 0.1;
+    public static final double kMaxSpeedMetersPerSecond = 0.12;
 
     public static final double kTrackRadiusMeters = Math.sqrt(Math.pow(13.5 * 0.0254, 2) + Math.pow(13.5 * 0.0254, 2));
 
@@ -143,9 +143,9 @@ public final class Constants {
     // ---------------------------------------------------------------------------
     // Hood PID constants
     // ---------------------------------------------------------------------------
-    public static final double hoodKp = 24.0; // Increased — 1.0 may be too weak against gravity/load
+    public static final double hoodKp = 30.0; // Increased — 1.0 may be too weak against gravity/load
     public static final double hoodKi = 0.0;
-    public static final double hoodKd = 0.3; // Small D to damp oscillation
+    public static final double hoodKd = 0.9; // Small D to damp oscillation
 
     // ---------------------------------------------------------------------------
     // Feeder (green wheels, hopper→shooter) PID / feedforward constants
@@ -159,7 +159,7 @@ public final class Constants {
     // Hood angle limits (radians, at the mechanism — after gear reduction)
     // ---------------------------------------------------------------------------
     public static final double hoodMinAngleRad = Units.degreesToRadians(5.0); // TODO: Set actual
-    public static final double hoodMaxAngleRad = Units.degreesToRadians(45.0); // TODO: Set actual
+    public static final double hoodMaxAngleRad = Units.degreesToRadians(30.0); // TODO: Set actual
 
     // ---------------------------------------------------------------------------
     // Tolerances
@@ -171,7 +171,7 @@ public final class Constants {
     // Default / feeder speeds
     // ---------------------------------------------------------------------------
     public static final double defaultFlywheelSpeedRPM = 2000.0; // TODO: changeback to more (normal)
-    public static final double maxFlywheelSpeedRPM = 4500.0; // for cross-court passing
+    public static final double maxFlywheelSpeedRPM = 5000.0; // for cross-court passing
 
     // Positive = feeds ball up from hopper to shooter
     public static final double feederFeedSpeedRPM = 800.0;
@@ -186,7 +186,7 @@ public final class Constants {
     // Slapdown angle limits (radians, at the mechanism after gear reduction)
     // Top position wraps around 2π/0, so use a value near 0 or 2π
     public static final double slapdownUpAngleRad = 0.0; // Top position (near 0/2π)
-    public static final double slapdownDownAngleRad = 1.6; // Down position
+    public static final double slapdownDownAngleRad = 1.2; // Down position 
 
     // Slapdown PID gains (separate for each mode so they can be tuned
     // independently)
@@ -244,7 +244,7 @@ public final class Constants {
   }
 
   public static final class AutoConstants {
-    public static final double kMaxSpeedMetersPerSecond = 2;
+    public static final double kMaxSpeedMetersPerSecond = 0.12;
     public static final double kMaxAccelerationMetersPerSecondSquared = 2;
     public static final double kMaxAngularSpeedRadiansPerSecond = Math.PI;
     public static final double kMaxAngularSpeedRadiansPerSecondSquared = Math.PI;

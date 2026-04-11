@@ -122,6 +122,11 @@ public class ShooterSubsystem extends SubsystemBase {
     rightFlywheelDisconnected.set(!rightFlywheel.isConnected());
     hoodDisconnected.set(!hood.isConnected());
     feederDisconnected.set(!feeder.isConnected());
+
+    //actual hood and shooting positions
+    // System.out.println("Left flywheel velocity: " + getLeftFlywheelVelocity());
+    // System.out.println("Right flywheel velocity: " + getRightFlywheelVelocity());
+    // System.out.println("Hood position: " + Units.radiansToDegrees(getHoodPosition()));
   }
 
   // ---------------------------------------------------------------------------
@@ -131,6 +136,7 @@ public class ShooterSubsystem extends SubsystemBase {
   /** Sets both flywheels to the same speed. */
   public void setFlywheelVelocity(double velocityRPM) {
     setFlywheelVelocities(velocityRPM, velocityRPM);
+
   }
 
   /** Sets left and right flywheels to independent speeds. */

@@ -26,8 +26,8 @@ public class ShotCalculator {
 
   // --- TUNING CONSTANTS ---
   // Flywheel: RPM = (Slope * distance) + Intercept
-  private static final double FLYWHEEL_SLOPE = 285.0;
-  private static final double FLYWHEEL_INTERCEPT = 1750.0;
+  private static final double FLYWHEEL_SLOPE = 500.0;   // changed from 285
+  private static final double FLYWHEEL_INTERCEPT = 1900.0;  // changed from 1750
 
   // Hood Angle (Quadratic): Radians = (A * d^2) + (B * d) + C
   private static final double HOOD_A = 0.021;
@@ -242,10 +242,16 @@ public class ShotCalculator {
   public ShootingParameters calculateFromDistance(
       double distanceMeters, edu.wpi.first.math.geometry.Rotation2d driveAngle) {
     boolean isValid = distanceMeters >= minDistance && distanceMeters <= maxDistance;
+    // double hoodAngle =
+    //     hoodAngleMap.get(distanceMeters) + Units.degreesToRadians(hoodAngleOffsetDeg);
+    // double flywheelSpeed = flywheelSpeedMap.get(distanceMeters);
+    // double tof = timeOfFlightMap.get(distanceMeters);
+
+    double tof = calculateTOF(distanceMeters); // using the equation now instead of presets
     double hoodAngle =
-        hoodAngleMap.get(distanceMeters) + Units.degreesToRadians(hoodAngleOffsetDeg);
-    double flywheelSpeed = flywheelSpeedMap.get(distanceMeters);
-    double tof = timeOfFlightMap.get(distanceMeters);
+        calculateHoodAngle(distanceMeters); // using the equation now instead of presets
+    double flywheelSpeed =
+        calculateFlywheelSpeed(distanceMeters); // using the equation now instead of presets
 
     var params =
         new ShootingParameters(isValid, hoodAngle, flywheelSpeed, distanceMeters, tof, driveAngle);

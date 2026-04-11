@@ -233,6 +233,8 @@ public class DriveSubsystem extends SubsystemBase {
    * @return the robot's heading in degrees, from -180 to 180
    */
   public double getHeading() {
+    //should be printing the heading....
+    //System.out.println("heading" + -m_gyro.getYaw());
     return Rotation2d.fromDegrees(-m_gyro.getYaw()).getDegrees();
   }
 
