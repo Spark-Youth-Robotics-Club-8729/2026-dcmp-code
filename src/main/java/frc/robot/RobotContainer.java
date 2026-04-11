@@ -63,7 +63,7 @@ public class RobotContainer {
   // The driver's controller
   XboxController m_driverController = new XboxController(OIConstants.kDriverControllerPort);
   XboxController m_operatorController = new XboxController(OIConstants.kOperatorControllerPort);
-  //boolean m_fieldRelative = true; (controlled with b and set by network values )
+  boolean m_fieldRelative = true;
 
   private final PIDController m_snapController = new PIDController(DriveConstants.kPSnap, DriveConstants.kISnap, DriveConstants.kDSnap);
 
@@ -86,7 +86,7 @@ public class RobotContainer {
                 -MathUtil.applyDeadband(m_driverController.getLeftY(), OIConstants.kDriveDeadband),
                 -MathUtil.applyDeadband(m_driverController.getLeftX(), OIConstants.kDriveDeadband),
                 -MathUtil.applyDeadband(m_driverController.getRightX(), OIConstants.kDriveDeadband),
-                NetworkValues.getInstance().isFieldRelative()),
+                m_fieldRelative),
             m_robotDrive));
   }
 
@@ -143,7 +143,6 @@ public class RobotContainer {
             .onTrue(new InstantCommand(() ->
         {
              m_fieldRelative = !m_fieldRelative;
-             NetworkValues.getInstance().setFieldRelative(m_fieldRelative);
              System.out.println("Field Relative equals "+m_fieldRelative);
         }
              ));
@@ -164,14 +163,14 @@ public class RobotContainer {
                         -MathUtil.applyDeadband(m_driverController.getLeftY(), OIConstants.kDriveDeadband),
                         -MathUtil.applyDeadband(m_driverController.getLeftX(), OIConstants.kDriveDeadband),
                         snapOutput,
-                        NetworkValues.getInstance().isFieldRelative());
+                        m_fieldRelative);
                 } else {
                     double snapOutput = m_snapController.calculate(heading, 0);
                     m_robotDrive.drive(
                         -MathUtil.applyDeadband(m_driverController.getLeftY(), OIConstants.kDriveDeadband),
                         -MathUtil.applyDeadband(m_driverController.getLeftX(), OIConstants.kDriveDeadband),
                         snapOutput,
-                        NetworkValues.getInstance().isFieldRelative());
+                        m_fieldRelative);
                 }
             }, m_robotDrive));
 
