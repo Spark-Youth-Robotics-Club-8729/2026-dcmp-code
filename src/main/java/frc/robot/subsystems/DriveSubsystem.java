@@ -4,6 +4,11 @@
 
 package frc.robot.subsystems;
 
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.hal.FRCNetComm.tInstances;
 import frc.robot.NetworkValues;
 import edu.wpi.first.hal.FRCNetComm.tResourceType;
@@ -88,6 +93,38 @@ public class DriveSubsystem extends SubsystemBase {
         builder.addDoubleProperty("heading", ()->(float)getHeading(), null);
       }
     });
+
+    // PathPlanner AutoBuilder configuration
+    try {
+      RobotConfig config = RobotConfig.fromGUISettings();
+      AutoBuilder.configure(
+        this::getPose,
+        this::resetOdometry,
+        () -> DriveConstants.kDriveKinematics.toChassisSpeeds(
+          m_frontLeft.getState(),
+          m_frontRight.getState(),
+          m_rearLeft.getState(),
+          m_rearRight.getState()
+        ),
+        (speeds, feedforwards) -> {
+          var states = DriveConstants.kDriveKinematics.toSwerveModuleStates(speeds);
+          SwerveDriveKinematics.desaturateWheelSpeeds(states, NetworkValues.getInstance().GetMaxSpeedInMeters());
+          m_frontLeft.setDesiredState(states[0]);
+          m_frontRight.setDesiredState(states[1]);
+          m_rearLeft.setDesiredState(states[2]);
+          m_rearRight.setDesiredState(states[3]);
+        },
+        new PPHolonomicDriveController(
+          new PIDConstants(1.0, 0.0, 0.0), // translation PID — tune these
+          new PIDConstants(1.0, 0.0, 0.0)  // rotation PID — tune these
+        ),
+        config,
+        () -> DriverStation.getAlliance().orElse(DriverStation.Alliance.Blue) == DriverStation.Alliance.Red,
+        this
+      );
+    } catch (Exception e) {
+      System.err.println("Failed to load PathPlanner RobotConfig: " + e.getMessage());
+    }
   }
   
     // Usage reporting for MAXSwerve template
