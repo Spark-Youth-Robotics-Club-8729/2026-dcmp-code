@@ -108,8 +108,10 @@ public class ShooterSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    SmartDashboard.putNumber("Shooter/Measured Hood Deg", Units.radiansToDegrees(getHoodPosition()));
-}
+    //will output it in radians and convert into degrees
+    System.out.println("using vision is "+ (getHoodPosition()*(360/(2 * Math.PI))));
+  
+
     // Stop flywheels and feeder when disabled; hood holds position via brake mode
     if (DriverStation.isDisabled()) {
       leftFlywheelSetpointRPM  = 0.0;
