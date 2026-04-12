@@ -109,7 +109,7 @@ public class ShooterSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     //will output it in radians and convert into degrees
-    System.out.println("using vision is "+ (getHoodPosition()*(360/(2 * Math.PI))));
+    //System.out.println("current hood position"+ (getHoodPosition()*(360/(2 * Math.PI))));
   
 
     // Stop flywheels and feeder when disabled; hood holds position via brake mode

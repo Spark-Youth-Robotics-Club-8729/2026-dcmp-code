@@ -15,6 +15,7 @@ import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -42,7 +43,7 @@ import edu.wpi.first.wpilibj2.command.button.POVButton;
 import frc.robot.NetworkValues;
 import java.util.List;
 import java.util.function.Supplier;
-
+import java.util.Timer;
 import frc.robot.command.SystemTestCommand;
 
 /*
@@ -55,6 +56,9 @@ public class RobotContainer {
   // The robot's subsystems
   public DriveSubsystem getDriveSubsystem() {
     return m_robotDrive;
+    }
+    public VisionSubsystem getVisionSubsystem() {
+        return m_visionSubsystem;
     }
   private final DriveSubsystem m_robotDrive = new DriveSubsystem();
   private final IndexerSubsystem m_indexerSubsystem = new IndexerSubsystem();
@@ -69,6 +73,7 @@ public class RobotContainer {
   
   //initialize sppeds and relative
   boolean m_fieldRelative = true;
+  boolean m_indexer = true;
 
   private double speed_Offense_Defense = 1.0;  // starts at offense regular speed
   private final double offense_speed = 1.0;
@@ -80,7 +85,6 @@ public class RobotContainer {
   public RobotContainer() {
     // Initialize shot calculator
     ShotCalculator.initialize(m_robotDrive::getPose, m_robotDrive::getVelocity, m_visionSubsystem.getAllianceHubPosition());
-    SmartDashboard.putNumber("Robot Gyro", m_robotDrive.getHeading());
     // Configure the button bindings
     configureButtonBindings();
 
@@ -115,7 +119,7 @@ public class RobotContainer {
          * - LT (Left Trigger) .... Reset Gyro to 0 (works!)
          * - A Button ............. Snap to 0° (works!)
          * - X ... Lock Wheels to X (works!)
-         * - POV Down ............. Reset Hood to 0 (does not work)
+         * - POV Down ............. Swtich to defnese speed (DOES NOT WORKKK)
          * - POV Up ............... Test Everything (works!)
          * ----------------------------------------------
          * OPERATOR CONTROLS (Port 1)
@@ -124,9 +128,12 @@ public class RobotContainer {
          * - RB (Right Bumper) .... Intake (havent tested yet)
          * - LB (Left Bumper) ..... Outtake (havent tested yet)
          * - X Button ............. Unjam (havent tested yet)
+         * - POV Up ............... Tunable shooting with elastic 
          * - POV Down ............. Slapdown (havent tested yet)
          * - POV Left ............. Hood Angle Down (havent tested yet)
          * - POV Right ............ Hood Angle Up (havent tested yet)
+         * - Y .................... flywheel ONLY
+         * - A .................... manual shoot
          */
 
         // Single press of X sets the robot into X formation
@@ -201,13 +208,23 @@ public class RobotContainer {
         
         //intake
         new JoystickButton(m_operatorController, XboxController.Button.kRightBumper.value)
-           .whileTrue(Commands.startEnd(() -> m_intakeSubsystem.intake(), ()->m_intakeSubsystem.stopintake()));
+            .onTrue(Commands.runOnce(()->{
+                    if(m_indexer){
+                        m_intakeSubsystem.intake();
+                        m_indexer = false;
+                    }
+                    else{
+                        m_intakeSubsystem.intake();
+                        m_indexer = true;
+                    }
+                    //m_intakeSubsystem.slapdowntoggle();
+                },m_intakeSubsystem));
 
         new JoystickButton(m_operatorController, XboxController.Button.kLeftBumper.value)
            .whileTrue(Commands.startEnd(() -> m_intakeSubsystem.outtake(), ()->m_intakeSubsystem.stopintake()));
 
         new JoystickButton(m_operatorController, XboxController.Button.kY.value)
-           .whileTrue(Commands.startEnd(() -> m_shooterSubsystem.feedNote(), ()->m_shooterSubsystem.stopFeeder()));
+           .whileTrue(Commands.startEnd(() ->  m_shooterSubsystem.setFlywheelVelocities(NetworkValues.getInstance().getFlywheelRPM(), NetworkValues.getInstance().getFlywheelRPM()), ()->m_shooterSubsystem.setFlywheelVelocities(0, 0)));
 
         new JoystickButton(m_operatorController, XboxController.Button.kB.value)
            .whileTrue(Commands.startEnd(() -> m_indexerSubsystem.setVoltage(6), ()->m_indexerSubsystem.stopindexer()));
@@ -235,15 +252,53 @@ public class RobotContainer {
         //         m_intakeSubsystem.slapdownup();
         //     },m_intakeSubsystem));
         
-        // passing from neutral zone to alliance zone (LIVE EDITABLE HOOD AND SPEEDS)
+        // passing from neutral zone to alliance zone (LIVE EDITABLE HOOD AND SPEEDS) with time delay for indexer
         new POVButton(m_operatorController, 0)
-            .whileTrue(Commands.startEnd(() -> {
+        .whileTrue(
+            Commands.sequence(
+                // Step 1: Spin up shooter and set hood
+                Commands.runOnce(() -> {
+                    double hoodAngleRad = Units.degreesToRadians(
+                        NetworkValues.getInstance().getPassingHoodAngle()
+                    );
+                    m_shooterSubsystem.setFlywheelVelocities(
+                        NetworkValues.getInstance().getFlywheelRPM(),
+                        NetworkValues.getInstance().getFlywheelRPM()
+                    );
+                    m_shooterSubsystem.setHoodPosition(hoodAngleRad);
+                }, m_shooterSubsystem),
+
+                // Wait for spin-up
+                Commands.waitSeconds(1.0),
+
+                // Feed note
+                Commands.run(() -> {
+                    m_shooterSubsystem.feedNote();
+                    m_indexerSubsystem.index();
+                }, m_shooterSubsystem, m_indexerSubsystem)
+            )
+            .finallyDo(() -> {
+                // Stop everything when button released
+                m_shooterSubsystem.setFlywheelVelocities(0, 0);
+                m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
+                m_shooterSubsystem.stopFeeder();
+                m_indexerSubsystem.stopindexer();
+            })
+        );
+        new JoystickButton(m_operatorController, XboxController.Button.kA.value)
+        // currently RPM is 2500 and angle is 10 degrees
+        .whileTrue(Commands.startEnd(() -> {
+
                 //get hood anlge from elastic
                 double hoodAngleRad = Units.degreesToRadians(NetworkValues.getInstance().getPassingHoodAngle());
-                m_shooterSubsystem.setFlywheelVelocities(NetworkValues.getInstance().getFlywheelRPM() - 1000, NetworkValues.getInstance().getFlywheelRPM() - 1000);
+                //double dist = m_visionSubsystem.getDistanceToHub();
+                m_shooterSubsystem.setFlywheelVelocities(NetworkValues.getInstance().getFlywheelRPM(), NetworkValues.getInstance().getFlywheelRPM());
                 m_shooterSubsystem.setHoodPosition(hoodAngleRad);
+                //double currentTime = DriverStation.getMatchTime();
+                Commands.waitSeconds(1.00);
                 m_shooterSubsystem.feedNote();
-                m_indexerSubsystem.index();
+                m_indexerSubsystem.index();          
+    
             }, 
             ()->{
                 m_shooterSubsystem.setFlywheelVelocities(0, 0);
@@ -275,10 +330,9 @@ public class RobotContainer {
                     // Prefer vision if hub tags are visible; fall back to pose-based calculation if not
                     ShotCalculator.ShootingParameters params;
 
-                    System.out.println("using vision is "+m_visionSubsystem.hasHubTarget());
                     if (m_visionSubsystem.hasHubTarget()) {
                         // calculate parameters from actual distance to hub
-                        double dist = m_visionSubsystem.getDistanceToHub() - 1.2;
+                        double dist = m_visionSubsystem.getDistanceToHub();
                         System.out.println("Distance to hub: " + dist);
                         Rotation2d driveAngle = m_visionSubsystem.getAllianceHubPosition()
                                 .minus(m_robotDrive.getPose().getTranslation()).getAngle();
@@ -286,6 +340,7 @@ public class RobotContainer {
                         //lastAngle = params.hoodAngleRad();
                     }   
                     else {
+
                         // No tag detected: use minimum hood angle and RPM values for safety
                         // This prevents shooting at high angles/speeds when target isn't visible
                         m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);

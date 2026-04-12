@@ -151,6 +151,7 @@ public class ShotCalculator {
 
     // Iterative lookahead: converge on where the note will land accounting for robot motion
     double lookaheadDistance = pose.getTranslation().getDistance(targetPosition);
+    //System.out.println("distance to target: " + lookaheadDistance);
     Translation2d lookaheadTranslation = pose.getTranslation();
     for (int i = 0;
         i < 5;
@@ -209,6 +210,8 @@ public class ShotCalculator {
   /** Returns the straight-line distance from the robot to the target in meters. */
   public double getDistanceToTarget() {
     return poseSupplier.get().getTranslation().getDistance(targetPosition);
+
+
   }
 
   /** Returns the target field position. */

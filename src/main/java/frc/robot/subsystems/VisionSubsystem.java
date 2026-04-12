@@ -71,6 +71,11 @@ public class VisionSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
+
+    // print out distances to hub live
+    double dist = getDistanceToHub();
+    System.out.println("Distance to hub: " + dist);
+
     updateInputs();
 
     // update Odometry using MegaTag 2 ONLY if enabled and data is valid

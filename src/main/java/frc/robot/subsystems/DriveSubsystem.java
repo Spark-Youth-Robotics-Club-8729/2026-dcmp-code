@@ -48,7 +48,7 @@ public class DriveSubsystem extends SubsystemBase {
       DriveConstants.kRearRightTurningCanId,
       DriveConstants.kBackRightChassisAngularOffset);
 
-  // The gyro sensor
+  // The gyro sensor on the navx
   private final AHRS m_gyro = new AHRS(AHRS.NavXComType.kMXP_SPI);
 
   // Odometry class for tracking robot pose
@@ -71,16 +71,16 @@ public class DriveSubsystem extends SubsystemBase {
       public void initSendable(SendableBuilder builder) {
         builder.setSmartDashboardType("SwerveDrive");
 
-        builder.addDoubleProperty("Front Left Angle", () -> (float) m_frontLeft.getPosition().angle.getRadians(), null);
+        builder.addDoubleProperty("Front Left Angle", () -> (float) m_frontLeft.getPosition().angle.getDegrees(), null);
         builder.addDoubleProperty("Front Left Velocity", () -> (float)(m_frontLeft.getVelocity()), null);
 
-        builder.addDoubleProperty("Front right Angle", () ->(float) m_frontRight.getPosition().angle.getRadians(), null);
+        builder.addDoubleProperty("Front right Angle", () ->(float) m_frontRight.getPosition().angle.getDegrees(), null);
         builder.addDoubleProperty("Front Right Velocity", () -> (float) (m_frontRight.getVelocity()), null);
 
-        builder.addDoubleProperty("back left Angle", () -> (float) (m_rearLeft.getPosition().angle.getRadians()), null);
+        builder.addDoubleProperty("back left Angle", () -> (float) (m_rearLeft.getPosition().angle.getDegrees()), null);
         builder.addDoubleProperty("Back Left Velocity", () -> (float) (m_rearLeft.getVelocity()), null);
 
-        builder.addDoubleProperty("back right Angle", () -> (float) (m_rearRight.getPosition().angle.getRadians()), null);
+        builder.addDoubleProperty("back right Angle", () -> (float) (m_rearRight.getPosition().angle.getDegrees()), null);
         builder.addDoubleProperty("Back Right Velocity", () -> (float) (m_rearRight.getVelocity()), null);
 
         builder.addDoubleProperty("Robot Angle", () -> (float) (m_gyro.getAngle()), null);
@@ -94,7 +94,7 @@ public class DriveSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // Update the odometry in the periodic block
-    // System.out.println("heading" + getHeading());
+    System.out.println("heading" + getHeading());
     // System.out.println("X: " + m_gyro.getRawGyroX());
     // System.out.println("Y: " + m_gyro.getRawGyroY());
     // System.out.println("Z: " + m_gyro.getRawGyroZ());
@@ -234,7 +234,6 @@ public class DriveSubsystem extends SubsystemBase {
    */
   public double getHeading() {
     //should be printing the heading....
-    //System.out.println("heading" + -m_gyro.getYaw());
     return Rotation2d.fromDegrees(-m_gyro.getYaw()).getDegrees();
   }
 

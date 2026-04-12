@@ -80,8 +80,8 @@ public final class Constants {
 
     public static final int kIndexerCanId = 22;
     public static final double gearratio = 4.0;
-    public static final double feedVolts = 6.0;
-    public static final double reverseVolts = -4.0;
+    public static final double feedVolts = 10.0;
+    public static final double reverseVolts = -10.0;
   }
 
   public static final class ShooterConstants {

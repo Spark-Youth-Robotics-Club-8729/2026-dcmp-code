@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.ShooterConstants;
+import frc.robot.subsystems.ShotCalculator;
 import edu.wpi.first.math.geometry.Pose2d;
 
 public class NetworkValues {
@@ -45,6 +46,11 @@ public class NetworkValues {
     DoubleSubscriber defaultFlywheelRPMSub;
     double defaultFlywheelRPM = ShooterConstants.defaultFlywheelSpeedRPM;
 
+    //Show distance to hub
+    DoublePublisher distanceToHubPub;
+    // Show limelight (vision) measured distance to hub
+    DoublePublisher visionDistanceToHubPub;
+
     public static NetworkValues getInstance(){
         if (instance == null) {
             instance = new NetworkValues();
@@ -72,16 +78,22 @@ public class NetworkValues {
         defaultFlywheelRPMPub.set(defaultFlywheelRPM);
         defaultFlywheelRPMSub = defaultFlywheelTopic.subscribe(defaultFlywheelRPM);
 
-
-
         // passing hood angle
         DoubleTopic hoodAngleTopic = table.getDoubleTopic("passHoodAngleDeg");
         passHoodAnglePub = hoodAngleTopic.publish();
         passHoodAnglePub.set(passHoodAngle);
         passHoodAngleSub = hoodAngleTopic.subscribe(passHoodAngle);
 
-        // field and offense/defense
+        //offense/defense
         offenseModeSub = table.getBooleanTopic("offenseMode").subscribe(true);
+
+    // pose-based distance (from ShotCalculator / pose estimation)
+    DoubleTopic distanceToHubPoseTopic = table.getDoubleTopic("distanceToHubPose");
+    distanceToHubPub = distanceToHubPoseTopic.publish();
+
+    // vision-based distance (from Limelight)
+    DoubleTopic distanceToHubVisionTopic = table.getDoubleTopic("distanceToHubVision");
+    visionDistanceToHubPub = distanceToHubVisionTopic.publish();
 
         m_field = new Field2d();
         SmartDashboard.putData("Field", m_field);
@@ -112,14 +124,20 @@ public class NetworkValues {
         return passHoodAngle;
     }
 
-    public void periodic(Pose2d robotPose) {
+    public void periodic(RobotContainer robotContainer) {
         defaultFlywheelRPM = defaultFlywheelRPMSub.get();
         flywheelRPM = flywheelRPMSub.get();
         maxSpeedInMeters = maxSpeedInMetersSub.get();
         passHoodAngle = passHoodAngleSub.get();
         offenseMode = offenseModeSub.get();
+    // publish pose-based distance calculated by ShotCalculator
+    distanceToHubPub.set(ShotCalculator.getInstance().getDistanceToTarget());
 
-        m_field.setRobotPose(robotPose);
+    // publish vision-based limelight distance (may be NaN if no tag visible)
+    double visionDist = robotContainer.getVisionSubsystem().getDistanceToHub();
+    visionDistanceToHubPub.set(visionDist);
+
+        m_field.setRobotPose(robotContainer.getDriveSubsystem().getPose());
     }
 
     public boolean isHubActive() {
