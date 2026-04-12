@@ -64,9 +64,11 @@ public class RobotContainer {
   // The driver's controller
   XboxController m_driverController = new XboxController(OIConstants.kDriverControllerPort);
   XboxController m_operatorController = new XboxController(OIConstants.kOperatorControllerPort);
-  boolean m_fieldRelative = true;
 
   private final PIDController m_snapController = new PIDController(DriveConstants.kPSnap, DriveConstants.kISnap, DriveConstants.kDSnap);
+  
+  //initialize sppeds and relative
+  boolean m_fieldRelative = true;
 
   private double speed_Offense_Defense = 1.0;  // starts at offense regular speed
   private final double offense_speed = 1.0;
@@ -160,6 +162,7 @@ public class RobotContainer {
 
 
         // In configureButtonBindings()
+
         new JoystickButton(m_driverController, XboxController.Button.kB.value)
             .onTrue(new InstantCommand(() ->
         {
@@ -232,11 +235,13 @@ public class RobotContainer {
         //         m_intakeSubsystem.slapdownup();
         //     },m_intakeSubsystem));
         
-        // passing from neutral zone to alliance zone
+        // passing from neutral zone to alliance zone (LIVE EDITABLE HOOD AND SPEEDS)
         new POVButton(m_operatorController, 0)
             .whileTrue(Commands.startEnd(() -> {
+                //get hood anlge from elastic
+                double hoodAngleRad = Units.degreesToRadians(NetworkValues.getInstance().getPassingHoodAngle());
                 m_shooterSubsystem.setFlywheelVelocities(NetworkValues.getInstance().getFlywheelRPM() - 1000, NetworkValues.getInstance().getFlywheelRPM() - 1000);
-                m_shooterSubsystem.setHoodPosition(Units.degreesToRadians(20.0));
+                m_shooterSubsystem.setHoodPosition(hoodAngleRad);
                 m_shooterSubsystem.feedNote();
                 m_indexerSubsystem.index();
             }, 
@@ -247,7 +252,7 @@ public class RobotContainer {
                 m_indexerSubsystem.stopindexer();
             },m_shooterSubsystem,m_indexerSubsystem));
 
-        //cross court passing from alliance zone to alliance zone
+        //cross court passing from alliance zone to alliance zone (using same speed as netural to alliance but different hood)
         new Trigger(()->m_operatorController.getLeftTriggerAxis()>0.5)
             .whileTrue(Commands.startEnd(() -> {
                 m_shooterSubsystem.setFlywheelVelocities(NetworkValues.getInstance().getFlywheelRPM(), NetworkValues.getInstance().getFlywheelRPM());

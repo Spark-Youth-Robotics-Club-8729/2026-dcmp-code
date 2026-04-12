@@ -146,7 +146,8 @@ public final class Constants {
     public static final double hoodKp = 30.0; // Increased — 1.0 may be too weak against gravity/load
     public static final double hoodKi = 0.0;
     public static final double hoodKd = 0.9; // Small D to damp oscillation
-
+    public static final double kDefaultPassHoodAngle = 20.0;
+    
     // ---------------------------------------------------------------------------
     // Feeder (green wheels, hopper→shooter) PID / feedforward constants
     // ---------------------------------------------------------------------------

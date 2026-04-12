@@ -108,6 +108,8 @@ public class ShooterSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
+    SmartDashboard.putNumber("Shooter/Measured Hood Deg", Units.radiansToDegrees(getHoodPosition()));
+}
     // Stop flywheels and feeder when disabled; hood holds position via brake mode
     if (DriverStation.isDisabled()) {
       leftFlywheelSetpointRPM  = 0.0;
