@@ -181,6 +181,7 @@ public final class Constants {
   }
 
   public static final class intakeconstants {
+    public static final int LIMIT_PORT = 0;
     public static final int kRollerID = 20;
     public static final int kSlapdownID = 21;
     public static final double slapdowngearratio = 45;

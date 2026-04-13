@@ -13,6 +13,7 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.wpilibj.Alert;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -31,6 +32,9 @@ public class IntakeSubsystem extends SubsystemBase{
     private final AbsoluteEncoder slapdownencoder;
     private final Debouncer slapdownSettleDebouncer = new Debouncer(0.15, DebounceType.kRising);
     // Detect bumper contact (stall) and stop driving the slapdown PID when we hit a hard stop
+    //private DigitalInput limitSwitch = new DigitalInput(intakeconstants.LIMIT_PORT);
+    DigitalInput toplimitSwitch = new DigitalInput(0);
+
     private final Debouncer slapdownStallDebouncer =
             new Debouncer(0.15, DebounceType.kRising);
     private PIDController slapdownPID;
@@ -56,13 +60,14 @@ public class IntakeSubsystem extends SubsystemBase{
 
     }
     
+    //private final Debouncer limitDebouncer = new Debouncer(0.05, DebounceType.kBoth);
     private final Alert  motordisconnect = new Alert("Intake motor disconnected", Alert.AlertType.kWarning);
-
-    
 
     public void periodic() {
         double output = slapdownPID.calculate(slapdownencoder.getPosition(), slapdowntarget)*intakeconstants.slapdowngearratio;
-        System.out.println("angle"+slapdownencoder.getPosition());
+        //System.out.println("angle "+slapdownencoder.getPosition());
+        System.out.println("limit switch state"+toplimitSwitch.get());
+        //is true when detects magnet
         
         // Stall detection: if motor is stalled (high voltage, high current, low velocity), set output to 0
         boolean slapdownStalled = slapdownStallDebouncer.calculate(
@@ -74,9 +79,6 @@ public class IntakeSubsystem extends SubsystemBase{
         }
         
         slapdownmotor.setVoltage(output);
-
-        //System.out.println("current position: " + slapdownencoder.getPosition());
-        //System.out.println("target: " + slapdowntarget);
 
         // use for logging and elastic in the future
     }
