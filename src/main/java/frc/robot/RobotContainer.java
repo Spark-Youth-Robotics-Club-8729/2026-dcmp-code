@@ -26,6 +26,7 @@ import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.Constants.ShooterConstants;
+import frc.robot.Constants.indexerconstants;
 import frc.robot.Constants.intakeconstants;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.IndexerSubsystem;
@@ -74,8 +75,9 @@ public class RobotContainer {
   //initialize sppeds and relative
   boolean m_fieldRelative = true;
   boolean m_indexer = true;
+  boolean m_slapdown = true;
+  
 
-  private double speed_Offense_Defense = 1.0;  // starts at offense regular speed
   private final double offense_speed = 1.0;
   private final double defense_speed = 1.7;  // 30% times faster than offense
 
@@ -94,8 +96,8 @@ public class RobotContainer {
         // Turning is controlled by the X axis of the right stick.
         new RunCommand(
             () -> m_robotDrive.drive(
-                -MathUtil.applyDeadband(m_driverController.getLeftY(), OIConstants.kDriveDeadband) * speed_Offense_Defense,
-                -MathUtil.applyDeadband(m_driverController.getLeftX(), OIConstants.kDriveDeadband) * speed_Offense_Defense,
+                -MathUtil.applyDeadband(m_driverController.getLeftY(), OIConstants.kDriveDeadband),
+                -MathUtil.applyDeadband(m_driverController.getLeftX(), OIConstants.kDriveDeadband),
                 -MathUtil.applyDeadband(m_driverController.getRightX(), OIConstants.kDriveDeadband),
                 m_fieldRelative),
             m_robotDrive));
@@ -181,18 +183,16 @@ public class RobotContainer {
         new POVButton(m_driverController, 0)   
             .onTrue(new SystemTestCommand(m_robotDrive));
 
+
+        /* 
         new POVButton(m_driverController, 180) 
             .onTrue(new InstantCommand(() ->
         {
-            if (speed_Offense_Defense == offense_speed) {
-                speed_Offense_Defense = defense_speed;
-            }
-            else {
-                speed_Offense_Defense = offense_speed;
-            }
-            System.out.println("speed multiplier" + speed_Offense_Defense);
+            DriveConstants.kMaxSpeedMetersPerSecond = 0.1;
         }
              ));
+
+        */
 
         new JoystickButton(m_driverController, XboxController.Button.kY.value)    
             .onTrue(new SystemTestCommand(m_robotDrive));
@@ -204,20 +204,19 @@ public class RobotContainer {
             }, m_robotDrive));
 
             
-        // OPERATOR ------------------------------------------           
+        // OPERATOR          
         
-        //intake
+        //intake toggle right bumper
         new JoystickButton(m_operatorController, XboxController.Button.kRightBumper.value)
             .onTrue(Commands.runOnce(()->{
                     if(m_indexer){
                         m_intakeSubsystem.intake();
                         m_indexer = false;
                     }
-                    else{
-                        m_intakeSubsystem.intake();
+                    else {
+                        m_intakeSubsystem.stopintake();
                         m_indexer = true;
                     }
-                    //m_intakeSubsystem.slapdowntoggle();
                 },m_intakeSubsystem));
 
         new JoystickButton(m_operatorController, XboxController.Button.kLeftBumper.value)
@@ -227,17 +226,21 @@ public class RobotContainer {
            .whileTrue(Commands.startEnd(() ->  m_shooterSubsystem.setFlywheelVelocities(NetworkValues.getInstance().getFlywheelRPM(), NetworkValues.getInstance().getFlywheelRPM()), ()->m_shooterSubsystem.setFlywheelVelocities(0, 0)));
 
         new JoystickButton(m_operatorController, XboxController.Button.kB.value)
-           .whileTrue(Commands.startEnd(() -> m_indexerSubsystem.setVoltage(6), ()->m_indexerSubsystem.stopindexer()));
+           .whileTrue(Commands.startEnd(() -> m_indexerSubsystem.setVoltage(indexerconstants.feedVolts), ()->m_indexerSubsystem.stopindexer()));
 
+
+           // toggle slapdown (add a check to set m_slapdown based on current angle... if angle = 0 vs. greater than 1 rad)
         new POVButton(m_operatorController, 180)
             .onTrue(Commands.runOnce(()->{
-                if(m_intakeSubsystem.count == 0){
+                if(m_slapdown) {
                     m_intakeSubsystem.slapdowndown();
+                    m_slapdown = false;
+                    //System.out.println("angle"+slapdownencoder.getPosition());
                 }
-                else{
+                else {
                     m_intakeSubsystem.slapdownup();
+                    m_slapdown = true;
                 }
-                //m_intakeSubsystem.slapdowntoggle();
             },m_intakeSubsystem));
         
 
@@ -256,7 +259,6 @@ public class RobotContainer {
         new POVButton(m_operatorController, 0)
         .whileTrue(
             Commands.sequence(
-                // Step 1: Spin up shooter and set hood
                 Commands.runOnce(() -> {
                     double hoodAngleRad = Units.degreesToRadians(
                         NetworkValues.getInstance().getPassingHoodAngle()
@@ -269,7 +271,7 @@ public class RobotContainer {
                 }, m_shooterSubsystem),
 
                 // Wait for spin-up
-                Commands.waitSeconds(1.0),
+                Commands.waitSeconds(0.5),
 
                 // Feed note
                 Commands.run(() -> {
@@ -291,10 +293,8 @@ public class RobotContainer {
 
                 //get hood anlge from elastic
                 double hoodAngleRad = Units.degreesToRadians(NetworkValues.getInstance().getPassingHoodAngle());
-                //double dist = m_visionSubsystem.getDistanceToHub();
                 m_shooterSubsystem.setFlywheelVelocities(NetworkValues.getInstance().getFlywheelRPM(), NetworkValues.getInstance().getFlywheelRPM());
                 m_shooterSubsystem.setHoodPosition(hoodAngleRad);
-                //double currentTime = DriverStation.getMatchTime();
                 Commands.waitSeconds(1.00);
                 m_shooterSubsystem.feedNote();
                 m_indexerSubsystem.index();          

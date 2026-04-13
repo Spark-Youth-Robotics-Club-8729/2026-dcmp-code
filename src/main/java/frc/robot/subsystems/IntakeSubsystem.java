@@ -9,8 +9,6 @@ import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkBase.ResetMode;
-
-
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
@@ -28,7 +26,6 @@ import com.revrobotics.REVLibError;
 import com.revrobotics.spark.SparkBase;
 
 public class IntakeSubsystem extends SubsystemBase{
-    public static int count = 0;
     private final TalonFX  intakemotor;
     private final SparkMax slapdownmotor;
     private final AbsoluteEncoder slapdownencoder;
@@ -65,6 +62,7 @@ public class IntakeSubsystem extends SubsystemBase{
 
     public void periodic() {
         double output = slapdownPID.calculate(slapdownencoder.getPosition(), slapdowntarget)*intakeconstants.slapdowngearratio;
+        System.out.println("angle"+slapdownencoder.getPosition());
         
         // Stall detection: if motor is stalled (high voltage, high current, low velocity), set output to 0
         boolean slapdownStalled = slapdownStallDebouncer.calculate(
@@ -109,7 +107,6 @@ public class IntakeSubsystem extends SubsystemBase{
         slapdownPID = new PIDController(intakeconstants.slapdownDownKp, intakeconstants.slapdownDownKi, intakeconstants.slapdownDownKd);
         slapdownPID.setTolerance(intakeconstants.slapdownToleranceRad);
         slapdownPID.enableContinuousInput(0, 2 * Math.PI);
-        count = 1;
     }
     public void slapdownup(){
         //sets the goal and the new PID
@@ -117,7 +114,6 @@ public class IntakeSubsystem extends SubsystemBase{
         slapdownPID = new PIDController(intakeconstants.slapdownUpKp, intakeconstants.slapdownUpKi, intakeconstants.slapdownUpKd);
         slapdownPID.setTolerance(intakeconstants.slapdownToleranceRad);
         slapdownPID.enableContinuousInput(0, 2 * Math.PI);
-        count = 0;
     }
 
     public void slapdowntoggle(){

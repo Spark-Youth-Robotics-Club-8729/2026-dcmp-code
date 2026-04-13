@@ -187,17 +187,17 @@ public final class Constants {
     // Slapdown angle limits (radians, at the mechanism after gear reduction)
     // Top position wraps around 2π/0, so use a value near 0 or 2π
     public static final double slapdownUpAngleRad = 0.0; // Top position (near 0/2π)
-    public static final double slapdownDownAngleRad = 1.2; // Down position 
+    public static final double slapdownDownAngleRad = 1.4; // Down position 
 
     // Slapdown PID gains (separate for each mode so they can be tuned
     // independently)
-    public static final double slapdownUpKp = 0.08; // TODO: Tune (increased from 0.001)
+    public static final double slapdownUpKp = 0.09; // TODO: Tune (increased from 0.001)
     public static final double slapdownUpKi = 0.0; // TODO: Tune
     public static final double slapdownUpKd = 0.0; // TODO: Tune
 
-    public static final double slapdownDownKp = 0.05; // TODO: Tune (increased from 0.001)
-    public static final double slapdownDownKi = 0.0; // TODO: Tune
-    public static final double slapdownDownKd = 0.0; // TODO: Tune
+    public static final double slapdownDownKp = 0.03; // TODO: Tune (increased from 0.001)
+    public static final double slapdownDownKi = 0.00; // TODO: Tune
+    public static final double slapdownDownKd = 0.00; // TODO: Tune
 
     public static final double slapdownJitterKp = 0.5; // TODO: Tune
     public static final double slapdownJitterKd = 0.5; // TODO: Tune
@@ -207,17 +207,17 @@ public final class Constants {
 
     // Slapdown stall detection (stop PID if we likely hit the bumper)
     public static final double slapdownStallCurrentAmps = 25.0; // above normal running current
-    public static final double slapdownStallAppliedVolts = 8.0; // near full output
+    public static final double slapdownStallAppliedVolts = 10.0; // near full output
     public static final double slapdownStallVelocityRadPerSec = Units.degreesToRadians(5.0);
-    public static final double slapdownStallDebounceSec = 0.15;
+
 
     // Roller voltages (positive = intake in, negative = outtake)
-    public static final double rollerIntakeVolts = 6.0; // Reduced from 10.0 — TODO: Tune
-    public static final double rollerOuttakeVolts = -4.0; // Reduced from -6.0 — TODO: Tune
+    public static final double rollerIntakeVolts = 7.0; // Reduced from 10.0 — TODO: Tune
+    public static final double rollerOuttakeVolts = -6.0; // Reduced from -6.0 — TODO: Tune
 
     // Jitter constansts
     public static final double jitterFrequencyHz = 0.25; // Tune
-    public static final double jitterAmplitudeDeg = 45.0; // Tune
+    public static final double jitterAmplitudeDeg = 55.0; // Tune
 
   }
 
