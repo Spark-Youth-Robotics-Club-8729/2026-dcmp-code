@@ -26,17 +26,27 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.REVLibError;
 import com.revrobotics.spark.SparkBase;
 
+import edu.wpi.first.math.MathUtil;
+
 public class IntakeSubsystem extends SubsystemBase{
     private final TalonFX  intakemotor;
     private final SparkMax slapdownmotor;
     private final AbsoluteEncoder slapdownencoder;
+
+
     private final Debouncer slapdownSettleDebouncer = new Debouncer(0.15, DebounceType.kRising);
     // Detect bumper contact (stall) and stop driving the slapdown PID when we hit a hard stop
-    //private DigitalInput limitSwitch = new DigitalInput(intakeconstants.LIMIT_PORT);
-    DigitalInput toplimitSwitch = new DigitalInput(0);
+
+    // detect limit switch state (use limitSwitch.get())
+    DigitalInput limitSwitch = new DigitalInput(intakeconstants.LIMIT_PORT);
+
+    // GO TO HUB AND SET IT TO THE INTIAL ONE BEFORE MATCH
+    private double absoluteOffset = intakeconstants.absoluteOffset;
 
     private final Debouncer slapdownStallDebouncer =
             new Debouncer(0.15, DebounceType.kRising);
+
+    private double jitterAnchor = 0;
     private PIDController slapdownPID;
     private double slapdowntarget;
     public double commandVoltage;
@@ -58,17 +68,23 @@ public class IntakeSubsystem extends SubsystemBase{
         slapdowntarget = slapdownencoder.getPosition();
         slapdownPID.enableContinuousInput(0, 2 * Math.PI);
 
+
     }
     
     //private final Debouncer limitDebouncer = new Debouncer(0.05, DebounceType.kBoth);
     private final Alert  motordisconnect = new Alert("Intake motor disconnected", Alert.AlertType.kWarning);
 
     public void periodic() {
-        double output = slapdownPID.calculate(slapdownencoder.getPosition(), slapdowntarget)*intakeconstants.slapdowngearratio;
         //System.out.println("angle "+slapdownencoder.getPosition());
-        System.out.println("limit switch state"+toplimitSwitch.get());
-        //is true when detects magnet
         
+        //is true when detects magnet (resets encoder position when reaching the top)
+        if (limitSwitch.get()) {
+            resetEncoder();
+        }
+        //gets current position based on the absolute offset
+        double currentPosition = currentPosition();
+        double output = slapdownPID.calculate(currentPosition, slapdowntarget)*intakeconstants.slapdowngearratio;
+
         // Stall detection: if motor is stalled (high voltage, high current, low velocity), set output to 0
         boolean slapdownStalled = slapdownStallDebouncer.calculate(
             Math.abs(output) >= intakeconstants.slapdownStallAppliedVolts
@@ -82,6 +98,12 @@ public class IntakeSubsystem extends SubsystemBase{
 
         // use for logging and elastic in the future
     }
+
+    //reset zero offset when at the top
+    public void resetEncoder() {
+        absoluteOffset = slapdownencoder.getPosition();
+    }
+
     public void setVoltage(double volts) {
         intakemotor.setVoltage(volts);
     }
@@ -101,7 +123,6 @@ public class IntakeSubsystem extends SubsystemBase{
         setVoltage(0);
     }
 
-
     //slapdown 
     public void slapdowndown(){
         //sets the goal and the new PID
@@ -118,8 +139,56 @@ public class IntakeSubsystem extends SubsystemBase{
         slapdownPID.enableContinuousInput(0, 2 * Math.PI);
     }
 
+    // jittering
+    public void slapdownjitterUp(double angle){
+        slapdowntarget = angle - intakeconstants.jitterRangeRad;
+        
+        slapdownPID = new PIDController(
+            intakeconstants.slapdownJitterKp, 
+            intakeconstants.slapdownJitterKi, 
+            intakeconstants.slapdownJitterKd
+        );
+        slapdownPID.setTolerance(intakeconstants.slapdownToleranceRad);
+        slapdownPID.enableContinuousInput(0, 2 * Math.PI);
+    }
+    
+    public void slapdownjitterDown(double angle){
+        // Return exactly to where we started (get the jitterAnchor when you press the button intially)
+        slapdowntarget = angle;
+        
+        slapdownPID = new PIDController(
+            intakeconstants.slapdownJitterKp, 
+            intakeconstants.slapdownJitterKi, 
+            intakeconstants.slapdownJitterKd
+        );
+        slapdownPID.setTolerance(intakeconstants.slapdownToleranceRad);
+        slapdownPID.enableContinuousInput(0, 2 * Math.PI);
+    }
+
+
+
+    // gets current encoder position
+    public double currentPosition () {
+        double currentPosition = slapdownencoder.getPosition() - absoluteOffset;
+
+        // wraps around to be within 0 and 2pi
+        return MathUtil.inputModulus(currentPosition, 0, 2 * Math.PI);
+    }
+
+    // toggle function of slapdown up or down based on current position
     public void slapdowntoggle(){
-        if (Math.abs(slapdownencoder.getPosition() - intakeconstants.slapdownUpAngleRad) < intakeconstants.slapdownToleranceRad) {
+        double currentPosition = currentPosition();
+
+        // true is when the slapdown is up (picks the current position when the slapdown is up -- tests based on 0.8 radians)
+        boolean slapState = true;
+        if (currentPosition > 0.8) {
+            slapState = true;
+        } else {
+            slapState = false;
+        }
+
+        // based on current slapState it will run the slapdown up or down
+        if (slapState) {
             slapdowndown();
         } else {
             slapdownup();

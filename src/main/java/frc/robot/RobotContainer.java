@@ -76,7 +76,7 @@ public class RobotContainer {
   boolean m_fieldRelative = true;
   boolean m_indexer = true;
   boolean m_slapdown = true;
-  
+  boolean m_jitterToggle = true;
 
   private final double offense_speed = 1.0;
   private final double defense_speed = 1.7;  // 30% times faster than offense
@@ -219,6 +219,19 @@ public class RobotContainer {
                     }
                 },m_intakeSubsystem));
 
+        new POVButton(m_operatorController, 90)
+                .onTrue(Commands.runOnce(()-> {
+                    // get the current angle and starts by going up and then down
+                    double angle = m_intakeSubsystem.currentPosition();
+                    if (m_jitterToggle) {
+                        m_intakeSubsystem.slapdownjitterUp(angle);
+                        m_jitterToggle = false;
+                    } else {
+                        m_intakeSubsystem.slapdownjitterDown(angle);
+                        m_jitterToggle = true;
+                    }
+                },m_intakeSubsystem));
+
         new JoystickButton(m_operatorController, XboxController.Button.kLeftBumper.value)
            .whileTrue(Commands.startEnd(() -> m_intakeSubsystem.outtake(), ()->m_intakeSubsystem.stopintake()));
 
@@ -229,19 +242,9 @@ public class RobotContainer {
            .whileTrue(Commands.startEnd(() -> m_indexerSubsystem.setVoltage(indexerconstants.feedVolts), ()->m_indexerSubsystem.stopindexer()));
 
 
-           // toggle slapdown (add a check to set m_slapdown based on current angle... if angle = 0 vs. greater than 1 rad)
+           // toggle slapdown 
         new POVButton(m_operatorController, 180)
-            .onTrue(Commands.runOnce(()->{
-                if(m_slapdown) {
-                    m_intakeSubsystem.slapdowndown();
-                    m_slapdown = false;
-                    //System.out.println("angle"+slapdownencoder.getPosition());
-                }
-                else {
-                    m_intakeSubsystem.slapdownup();
-                    m_slapdown = true;
-                }
-            },m_intakeSubsystem));
+            .onTrue(Commands.runOnce(()->{m_intakeSubsystem.slapdowntoggle();}));
         
 
         // new POVButton(m_operatorController, 90)

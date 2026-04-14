@@ -181,6 +181,9 @@ public final class Constants {
   }
 
   public static final class intakeconstants {
+    // absolute encoder initial offset (GET THIS VALUE BEFORE THE TEST~!!!!!!)
+    public static double absoluteOffset = 0;
+    //port for the limit switch
     public static final int LIMIT_PORT = 0;
     public static final int kRollerID = 20;
     public static final int kSlapdownID = 21;
@@ -200,9 +203,6 @@ public final class Constants {
     public static final double slapdownDownKi = 0.00; // TODO: Tune
     public static final double slapdownDownKd = 0.00; // TODO: Tune
 
-    public static final double slapdownJitterKp = 0.5; // TODO: Tune
-    public static final double slapdownJitterKd = 0.5; // TODO: Tune
-
     // Slapdown tolerance
     public static final double slapdownToleranceRad = Units.degreesToRadians(5.0);
 
@@ -213,12 +213,14 @@ public final class Constants {
 
 
     // Roller voltages (positive = intake in, negative = outtake)
-    public static final double rollerIntakeVolts = 7.0; // Reduced from 10.0 — TODO: Tune
-    public static final double rollerOuttakeVolts = -6.0; // Reduced from -6.0 — TODO: Tune
+    public static final double rollerIntakeVolts = 7.0; // Reduced from 10.0
+    public static final double rollerOuttakeVolts = -6.0; // Reduced from -6.0 
 
     // Jitter constansts
-    public static final double jitterFrequencyHz = 0.25; // Tune
-    public static final double jitterAmplitudeDeg = 55.0; // Tune
+    public static final double jitterRangeRad = 0.5; // Tune
+    public static final double slapdownJitterKp = 0.08; // TODO: Tune (prolly too high)
+    public static final double slapdownJitterKi = 0.0; // TODO: Tune
+    public static final double slapdownJitterKd = 0.0; // TODO: Tune
 
   }
 
