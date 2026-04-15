@@ -182,7 +182,7 @@ public final class Constants {
 
   public static final class intakeconstants {
     // absolute encoder initial offset (GET THIS VALUE BEFORE THE TEST~!!!!!!)
-    public static double absoluteOffset = 0;
+    public static double absoluteOffset = 0.0;
     //port for the limit switch
     public static final int LIMIT_PORT = 0;
     public static final int kRollerID = 20;
@@ -195,11 +195,11 @@ public final class Constants {
 
     // Slapdown PID gains (separate for each mode so they can be tuned
     // independently)
-    public static final double slapdownUpKp = 0.09; // TODO: Tune (increased from 0.001)
+    public static final double slapdownUpKp = 0.07; // TODO: Tune (increased from 0.001)
     public static final double slapdownUpKi = 0.0; // TODO: Tune
     public static final double slapdownUpKd = 0.0; // TODO: Tune
 
-    public static final double slapdownDownKp = 0.03; // TODO: Tune (increased from 0.001)
+    public static final double slapdownDownKp = 0.001; // TODO: Tune (increased from 0.001)
     public static final double slapdownDownKi = 0.00; // TODO: Tune
     public static final double slapdownDownKd = 0.00; // TODO: Tune
 
@@ -217,10 +217,13 @@ public final class Constants {
     public static final double rollerOuttakeVolts = -6.0; // Reduced from -6.0 
 
     // Jitter constansts
-    public static final double jitterRangeRad = 0.5; // Tune
-    public static final double slapdownJitterKp = 0.08; // TODO: Tune (prolly too high)
-    public static final double slapdownJitterKi = 0.0; // TODO: Tune
-    public static final double slapdownJitterKd = 0.0; // TODO: Tune
+    public static final double jitterRangeRad = 0.4; // Tuned
+    public static final double slapdownJUpKp = 0.1; // TODO: Tune (edited from 0.08)
+    public static final double slapdownJUpKi = 0.04; // TODO: Tune (edited from 0.00)
+    public static final double slapdownJUpKd = 0.0; // TODO: Tune
+    public static final double slapdownJDownKp = 0.6; // TODO: Tune (edited from 0.1)
+    public static final double slapdownJDownKi = 0.04; // TODO: Tune (edited from 0.00)
+    public static final double slapdownJDownpKd = 0.0; // TODO: Tune
 
   }
 

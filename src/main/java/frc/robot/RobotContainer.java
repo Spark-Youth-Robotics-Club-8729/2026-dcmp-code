@@ -223,10 +223,15 @@ public class RobotContainer {
                 .onTrue(Commands.runOnce(()-> {
                     // get the current angle and starts by going up and then down
                     double angle = m_intakeSubsystem.currentPosition();
+
+                    System.out.println("set angle" + angle);
+
                     if (m_jitterToggle) {
+                        System.out.println("bringing jitter UPP");
                         m_intakeSubsystem.slapdownjitterUp(angle);
                         m_jitterToggle = false;
                     } else {
+                        System.out.println("bringing jitter DOWNN");
                         m_intakeSubsystem.slapdownjitterDown(angle);
                         m_jitterToggle = true;
                     }
@@ -242,7 +247,7 @@ public class RobotContainer {
            .whileTrue(Commands.startEnd(() -> m_indexerSubsystem.setVoltage(indexerconstants.feedVolts), ()->m_indexerSubsystem.stopindexer()));
 
 
-           // toggle slapdown 
+           // toggle slapdown (pov down - toggle)
         new POVButton(m_operatorController, 180)
             .onTrue(Commands.runOnce(()->{m_intakeSubsystem.slapdowntoggle();}));
         
@@ -273,7 +278,7 @@ public class RobotContainer {
                     m_shooterSubsystem.setHoodPosition(hoodAngleRad);
                 }, m_shooterSubsystem),
 
-                // Wait for spin-up
+                // Wait for spin-up for 0.5 seconds
                 Commands.waitSeconds(0.5),
 
                 // Feed note
@@ -396,12 +401,14 @@ public class RobotContainer {
             ));
             
         //bring hood up
+        /* 
         new POVButton(m_operatorController, 90)
              .onTrue(Commands.runOnce(()->{
                  m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMaxAngleRad);
                  System.out.println("Hood angle: " + Units.radiansToDegrees(m_shooterSubsystem.getHoodPosition()));
              }, m_shooterSubsystem));
 
+             */
              // bring hood down
         new POVButton(m_operatorController, 270)
              .onTrue(Commands.runOnce(()->{

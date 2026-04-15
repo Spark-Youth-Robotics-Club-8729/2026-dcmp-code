@@ -93,7 +93,7 @@ public class DriveSubsystem extends SubsystemBase {
     // Usage reporting for MAXSwerve template
   @Override
   public void periodic() {
-    // Update the odometry in the periodic block
+    // Update the odometry in the periodic block (using forward and bwd to change the heading rather than angle... FIXIXIIX)
     System.out.println("heading" + getHeading());
     m_odometry.update(
         Rotation2d.fromDegrees(-m_gyro.getYaw()),

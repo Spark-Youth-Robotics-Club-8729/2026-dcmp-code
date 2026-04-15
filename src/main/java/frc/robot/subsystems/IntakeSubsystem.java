@@ -54,6 +54,8 @@ public class IntakeSubsystem extends SubsystemBase{
         intakemotor = new TalonFX(intakeconstants.kRollerID);
         slapdownmotor = new SparkMax(intakeconstants.kSlapdownID, MotorType.kBrushless);
         SparkMaxConfig config = new SparkMaxConfig();
+        //set the motor to coast
+        config.idleMode(SparkMaxConfig.IdleMode.kCoast);
 
         config.absoluteEncoder
             .positionConversionFactor((2.0 * Math.PI))
@@ -65,7 +67,7 @@ public class IntakeSubsystem extends SubsystemBase{
         slapdownPID = new PIDController(intakeconstants.slapdownUpKp, 0, 0); //readd derivative and tune later
 
         slapdownPID.setTolerance(intakeconstants.slapdownToleranceRad);
-        slapdowntarget = slapdownencoder.getPosition();
+        slapdowntarget = currentPosition();
         slapdownPID.enableContinuousInput(0, 2 * Math.PI);
 
 
@@ -75,12 +77,18 @@ public class IntakeSubsystem extends SubsystemBase{
     private final Alert  motordisconnect = new Alert("Intake motor disconnected", Alert.AlertType.kWarning);
 
     public void periodic() {
-        //System.out.println("angle "+slapdownencoder.getPosition());
+        //System.out.println("current angle "+slapdownencoder.getPosition());
+        System.out.println("current position "+currentPosition()+"offset"+absoluteOffset);
+        System.out.println("limit switch state "+!limitSwitch.get());
+
+    
         
         //is true when detects magnet (resets encoder position when reaching the top)
-        if (limitSwitch.get()) {
+        if (!limitSwitch.get()) {
             resetEncoder();
         }
+
+
         //gets current position based on the absolute offset
         double currentPosition = currentPosition();
         double output = slapdownPID.calculate(currentPosition, slapdowntarget)*intakeconstants.slapdowngearratio;
@@ -131,6 +139,7 @@ public class IntakeSubsystem extends SubsystemBase{
         slapdownPID.setTolerance(intakeconstants.slapdownToleranceRad);
         slapdownPID.enableContinuousInput(0, 2 * Math.PI);
     }
+
     public void slapdownup(){
         //sets the goal and the new PID
         slapdowntarget = intakeconstants.slapdownUpAngleRad;
@@ -144,9 +153,9 @@ public class IntakeSubsystem extends SubsystemBase{
         slapdowntarget = angle - intakeconstants.jitterRangeRad;
         
         slapdownPID = new PIDController(
-            intakeconstants.slapdownJitterKp, 
-            intakeconstants.slapdownJitterKi, 
-            intakeconstants.slapdownJitterKd
+            intakeconstants.slapdownJUpKp, 
+            intakeconstants.slapdownJUpKi, 
+            intakeconstants.slapdownJUpKd
         );
         slapdownPID.setTolerance(intakeconstants.slapdownToleranceRad);
         slapdownPID.enableContinuousInput(0, 2 * Math.PI);
@@ -154,12 +163,16 @@ public class IntakeSubsystem extends SubsystemBase{
     
     public void slapdownjitterDown(double angle){
         // Return exactly to where we started (get the jitterAnchor when you press the button intially)
-        slapdowntarget = angle;
+        if (angle > 1.5) {
+            slapdowntarget = angle;
+        } else {
+            slapdowntarget = angle + intakeconstants.jitterRangeRad;
+        }
         
         slapdownPID = new PIDController(
-            intakeconstants.slapdownJitterKp, 
-            intakeconstants.slapdownJitterKi, 
-            intakeconstants.slapdownJitterKd
+            intakeconstants.slapdownJDownKp, 
+            intakeconstants.slapdownJDownKi, 
+            intakeconstants.slapdownJDownpKd
         );
         slapdownPID.setTolerance(intakeconstants.slapdownToleranceRad);
         slapdownPID.enableContinuousInput(0, 2 * Math.PI);
@@ -167,7 +180,7 @@ public class IntakeSubsystem extends SubsystemBase{
 
 
 
-    // gets current encoder position
+    // gets current encoder position based on absolute offset and wraps 
     public double currentPosition () {
         double currentPosition = slapdownencoder.getPosition() - absoluteOffset;
 
@@ -176,16 +189,17 @@ public class IntakeSubsystem extends SubsystemBase{
     }
 
     // toggle function of slapdown up or down based on current position
-    public void slapdowntoggle(){
+    public void slapdowntoggle() {
         double currentPosition = currentPosition();
 
-        // true is when the slapdown is up (picks the current position when the slapdown is up -- tests based on 0.8 radians)
+        // true is when the slapdown is up ()
         boolean slapState = true;
-        if (currentPosition > 0.8) {
+        if ((currentPosition < 0.4) || (currentPosition > 5.0)) {
             slapState = true;
         } else {
             slapState = false;
         }
+        System.out.println("slap state (true = top): " + slapState);
 
         // based on current slapState it will run the slapdown up or down
         if (slapState) {
