@@ -195,7 +195,7 @@ public final class Constants {
 
     // Slapdown PID gains (separate for each mode so they can be tuned
     // independently)
-    public static final double slapdownUpKp = 0.07; // TODO: Tune (increased from 0.001)
+    public static final double slapdownUpKp = 0.1; // TODO: Tune (increased from 0.001)
     public static final double slapdownUpKi = 0.0; // TODO: Tune
     public static final double slapdownUpKd = 0.0; // TODO: Tune
 
@@ -219,10 +219,11 @@ public final class Constants {
     // Jitter constansts
     public static final double jitterRangeRad = 0.4; // Tuned
     public static final double slapdownJUpKp = 0.1; // TODO: Tune (edited from 0.08)
-    public static final double slapdownJUpKi = 0.04; // TODO: Tune (edited from 0.00)
+    public static final double slapdownJUpKi = 0.02; // TODO: Tune (edited from 0.00)
     public static final double slapdownJUpKd = 0.0; // TODO: Tune
-    public static final double slapdownJDownKp = 0.6; // TODO: Tune (edited from 0.1)
-    public static final double slapdownJDownKi = 0.04; // TODO: Tune (edited from 0.00)
+    
+    public static final double slapdownJDownKp = 0.08; // TODO: Tune (edited from 0.1)
+    public static final double slapdownJDownKi = 0.0; // TODO: Tune (edited from 0.00)
     public static final double slapdownJDownpKd = 0.0; // TODO: Tune
 
   }

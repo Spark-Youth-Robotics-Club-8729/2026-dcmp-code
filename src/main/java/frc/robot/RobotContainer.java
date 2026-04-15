@@ -341,7 +341,7 @@ public class RobotContainer {
                     if (m_visionSubsystem.hasHubTarget()) {
                         // calculate parameters from actual distance to hub
                         double dist = m_visionSubsystem.getDistanceToHub();
-                        System.out.println("Distance to hub: " + dist);
+                        //System.out.println("Distance to hub: " + dist);
                         Rotation2d driveAngle = m_visionSubsystem.getAllianceHubPosition()
                                 .minus(m_robotDrive.getPose().getTranslation()).getAngle();
                         params = ShotCalculator.getInstance().calculateFromDistance(dist, driveAngle);

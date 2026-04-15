@@ -68,7 +68,7 @@ public class IntakeSubsystem extends SubsystemBase{
 
         slapdownPID.setTolerance(intakeconstants.slapdownToleranceRad);
         slapdowntarget = currentPosition();
-        slapdownPID.enableContinuousInput(0, 2 * Math.PI);
+        //slapdownPID.enableContinuousInput(0, 2 * Math.PI);
 
 
     }
@@ -145,7 +145,7 @@ public class IntakeSubsystem extends SubsystemBase{
         slapdowntarget = intakeconstants.slapdownUpAngleRad;
         slapdownPID = new PIDController(intakeconstants.slapdownUpKp, intakeconstants.slapdownUpKi, intakeconstants.slapdownUpKd);
         slapdownPID.setTolerance(intakeconstants.slapdownToleranceRad);
-        slapdownPID.enableContinuousInput(0, 2 * Math.PI);
+        //slapdownPID.enableContinuousInput(0, 2 * Math.PI);
     }
 
     // jittering
@@ -194,18 +194,20 @@ public class IntakeSubsystem extends SubsystemBase{
 
         // true is when the slapdown is up ()
         boolean slapState = true;
-        if ((currentPosition < 0.4) || (currentPosition > 5.0)) {
-            slapState = true;
-        } else {
+
+        if((0.4 < currentPosition && currentPosition < 1.0)) {
             slapState = false;
+        } else {
+            slapState = true;
         }
+
         System.out.println("slap state (true = top): " + slapState);
 
         // based on current slapState it will run the slapdown up or down
         if (slapState) {
-            slapdowndown();
-        } else {
             slapdownup();
+        } else {
+            slapdowndown();
         }
     }
 
