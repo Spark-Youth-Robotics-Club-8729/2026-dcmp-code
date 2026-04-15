@@ -174,6 +174,12 @@ public final class Constants {
     public static final double defaultFlywheelSpeedRPM = 2000.0; // TODO: changeback to more (normal)
     public static final double maxFlywheelSpeedRPM = 5000.0; // for cross-court passing
 
+    // Preset shot constants
+    public static final double hubHoodAngleDeg   = 10.0;   // lined up to hub
+    public static final double hubFlywheelRPM    = 2500.0;
+    public static final double towerHoodAngleDeg = 20.0;   // lined up to tower
+    public static final double towerFlywheelRPM  = 3200.0;
+
     // Positive = feeds ball up from hopper to shooter
     public static final double feederFeedSpeedRPM = 800.0;
     // Negative = ejects ball back down toward hopper

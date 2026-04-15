@@ -15,7 +15,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.subsystems.ShotCalculator;
-import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.util.Units;
 
 public class NetworkValues {
     private static NetworkValues instance;
@@ -50,6 +50,15 @@ public class NetworkValues {
     DoublePublisher distanceToHubPub;
     // Show limelight (vision) measured distance to hub
     DoublePublisher visionDistanceToHubPub;
+
+    // Shooter telemetry — published for Elastic Testing tab
+    private DoublePublisher shooterHoodAnglePub;
+    private DoublePublisher shooterFlywheelRPMPub;
+    private BooleanPublisher shooterAtSpeedPub;
+    private BooleanPublisher shooterHoodAtPositionPub;
+
+    // Drive telemetry — published for Elastic Driver Station tab
+    private DoublePublisher driveSpeedMPSPub;
 
     public static NetworkValues getInstance(){
         if (instance == null) {
@@ -87,13 +96,24 @@ public class NetworkValues {
         //offense/defense
         offenseModeSub = table.getBooleanTopic("offenseMode").subscribe(true);
 
-    // pose-based distance (from ShotCalculator / pose estimation)
-    DoubleTopic distanceToHubPoseTopic = table.getDoubleTopic("distanceToHubPose");
-    distanceToHubPub = distanceToHubPoseTopic.publish();
+        // pose-based distance (from ShotCalculator / pose estimation)
+        DoubleTopic distanceToHubPoseTopic = table.getDoubleTopic("distanceToHubPose");
+        distanceToHubPub = distanceToHubPoseTopic.publish();
 
-    // vision-based distance (from Limelight)
-    DoubleTopic distanceToHubVisionTopic = table.getDoubleTopic("distanceToHubVision");
-    visionDistanceToHubPub = distanceToHubVisionTopic.publish();
+        // vision-based distance (from Limelight)
+        DoubleTopic distanceToHubVisionTopic = table.getDoubleTopic("distanceToHubVision");
+        visionDistanceToHubPub = distanceToHubVisionTopic.publish();
+
+        // Shooter telemetry (for Elastic Testing tab)
+        NetworkTable shooterTable = inst.getTable("shooter");
+        shooterHoodAnglePub  = shooterTable.getDoubleTopic("hoodAngleDeg").publish();
+        shooterFlywheelRPMPub = shooterTable.getDoubleTopic("flywheelRPM").publish();
+        shooterAtSpeedPub    = shooterTable.getBooleanTopic("flywheelAtSpeed").publish();
+        shooterHoodAtPositionPub = shooterTable.getBooleanTopic("hoodAtPosition").publish();
+
+        // Drive telemetry (for Elastic Driver Station tab)
+        NetworkTable driveTable = inst.getTable("drive");
+        driveSpeedMPSPub = driveTable.getDoubleTopic("speedMPS").publish();
 
         m_field = new Field2d();
         SmartDashboard.putData("Field", m_field);
@@ -130,12 +150,23 @@ public class NetworkValues {
         maxSpeedInMeters = maxSpeedInMetersSub.get();
         passHoodAngle = passHoodAngleSub.get();
         offenseMode = offenseModeSub.get();
-    // publish pose-based distance calculated by ShotCalculator
-    distanceToHubPub.set(ShotCalculator.getInstance().getDistanceToTarget());
 
-    // publish vision-based limelight distance (may be NaN if no tag visible)
-    double visionDist = robotContainer.getVisionSubsystem().getDistanceToHub();
-    visionDistanceToHubPub.set(visionDist);
+        // publish pose-based distance calculated by ShotCalculator
+        distanceToHubPub.set(ShotCalculator.getInstance().getDistanceToTarget());
+
+        // publish vision-based limelight distance (may be NaN if no tag visible)
+        double visionDist = robotContainer.getVisionSubsystem().getDistanceToHub();
+        visionDistanceToHubPub.set(Double.isNaN(visionDist) ? -1.0 : visionDist);
+
+        // Publish shooter telemetry for Elastic Testing tab
+        var shooter = robotContainer.getShooterSubsystem();
+        shooterHoodAnglePub.set(Units.radiansToDegrees(shooter.getHoodPosition()));
+        shooterFlywheelRPMPub.set(shooter.getAverageFlywheelVelocity());
+        shooterAtSpeedPub.set(shooter.areFlywheelsAtSpeed());
+        shooterHoodAtPositionPub.set(shooter.isHoodAtPosition());
+
+        // Publish drive telemetry for Elastic Driver Station tab
+        driveSpeedMPSPub.set(GetMaxSpeedInMeters());
 
         m_field.setRobotPose(robotContainer.getDriveSubsystem().getPose());
     }

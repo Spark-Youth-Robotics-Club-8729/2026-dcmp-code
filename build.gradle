@@ -71,14 +71,8 @@ dependencies {
     nativeRelease wpi.java.vendor.jniRelease(wpi.platforms.desktop)
     simulationRelease wpi.sim.enableRelease()
 
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
-
-test {
-    useJUnitPlatform()
-    systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
-}
+// No test sources — JUnit test task removed to avoid Gradle 8.11 config-phase incompatibility
 
 // Simulation configuration (e.g. environment variables).
 wpi.sim.addGui().defaultEnabled = true
@@ -99,7 +93,7 @@ jar {
 // Configure jar and deploy tasks
 deployArtifact.jarTask = jar
 wpi.java.configureExecutableTasks(jar)
-wpi.java.configureTestTasks(test)
+// wpi.java.configureTestTasks(test) — removed, no test sources
 
 // Configure string concat to always inline compile
 tasks.withType(JavaCompile) {
