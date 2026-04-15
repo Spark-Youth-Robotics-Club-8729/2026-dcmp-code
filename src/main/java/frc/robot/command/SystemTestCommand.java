@@ -169,7 +169,7 @@ public class SystemTestCommand extends SequentialCommandGroup {
               double speed = 0.5 * NetworkValues.getInstance().GetMaxSpeedInMeters(); // 50% of max speed for testing
               Rotation2d angle;
               double driveSpeed;
-              switch (direction) {
+              switch (direction) { 
                 case "Forward":
                   angle = Rotation2d.fromDegrees(0);
                   driveSpeed = speed;

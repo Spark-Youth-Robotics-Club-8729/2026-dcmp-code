@@ -84,18 +84,24 @@ public class RobotContainer {
   public RobotContainer() {
     // Configure the button bindings
     configureButtonBindings();
-
+    m_snapController.enableContinuousInput(-180.0, 180.0);
+    m_snapController.setTolerance(DriveConstants.snapTolerance);
     // Configure default commands
     m_robotDrive.setDefaultCommand(
         // The left stick controls translation of the robot.
         // Turning is controlled by the X axis of the right stick.
         new RunCommand(
             () -> m_robotDrive.drive(
-                -MathUtil.applyDeadband(m_driverController.getLeftY(), OIConstants.kDriveDeadband),
-                -MathUtil.applyDeadband(m_driverController.getLeftX(), OIConstants.kDriveDeadband),
-                -MathUtil.applyDeadband(m_driverController.getRightX(), OIConstants.kDriveDeadband),
-                m_fieldRelative),
-            m_robotDrive));
+                -MathUtil.applyDeadband(m_driverController.getLeftY(), OIConstants.kDriveDeadband) 
+                * NetworkValues.getInstance().GetMaxSpeedInMeters(), // Added this
+            -MathUtil.applyDeadband(m_driverController.getLeftX(), OIConstants.kDriveDeadband) 
+                * NetworkValues.getInstance().GetMaxSpeedInMeters(), // Added this
+            -MathUtil.applyDeadband(m_driverController.getRightX(), OIConstants.kDriveDeadband),
+            m_fieldRelative),
+        m_robotDrive)); 
+
+        NetworkValues.getInstance().systemTest(
+        new SystemTestCommand(m_robotDrive).withName("Full System Test"));
   }
 
   /**
@@ -195,10 +201,9 @@ public class RobotContainer {
         new Trigger(() -> m_driverController.getLeftTriggerAxis() > 0.5)
            .whileTrue(new RunCommand(() -> {
                 System.out.println("Zeroing gyro!");
-                m_robotDrive.zeroHeading();
             }, m_robotDrive));
 
-            
+
         // OPERATOR          
         
         //intake toggle right bumper
@@ -256,7 +261,7 @@ public class RobotContainer {
             Commands.sequence(
                 Commands.runOnce(() -> {
                     double hoodAngleRad = Units.degreesToRadians(
-                        NetworkValues.getInstance().getPassingHoodAngle()
+                        NetworkValues.getInstance().getPassHoodAngle()
                     );
                     m_shooterSubsystem.setFlywheelVelocities(
                         NetworkValues.getInstance().getFlywheelRPM(),
@@ -286,59 +291,76 @@ public class RobotContainer {
         new JoystickButton(m_operatorController, XboxController.Button.kA.value)
         .whileTrue(
             Commands.sequence(
+            Commands.runOnce(() -> {
+                // network tables
+                double rpm = NetworkValues.getInstance().getTowerRPM();
+                double hoodDeg = NetworkValues.getInstance().getTowerHoodAngle();
+                
+                m_shooterSubsystem.setFlywheelVelocities(rpm, rpm);
+                m_shooterSubsystem.setHoodPosition(Units.degreesToRadians(hoodDeg));
+            }, m_shooterSubsystem),
+            Commands.waitSeconds(0.5),
+            Commands.run(() -> {
+                m_shooterSubsystem.feedNote();
+                m_indexerSubsystem.index();
+            }, m_shooterSubsystem, m_indexerSubsystem)
+        )
+        .finallyDo(() -> {
+            m_shooterSubsystem.setFlywheelVelocities(0, 0);
+            m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
+            m_shooterSubsystem.stopFeeder();
+            m_indexerSubsystem.stopindexer();
+        })
+        );
+
+        //cross court passing from alliance zone to alliance zone (using same speed as netural to alliance but different hood)
+        new Trigger(() -> m_operatorController.getLeftTriggerAxis() > 0.5)
+        .whileTrue(
+        Commands.sequence(
+            Commands.runOnce(() -> {
+                // pls work
+                double rpm = NetworkValues.getInstance().getCourtRPM();
+                double hoodDeg = NetworkValues.getInstance().getCourtHoodAngle();
+                
+                m_shooterSubsystem.setFlywheelVelocities(rpm, rpm);
+                m_shooterSubsystem.setHoodPosition(Units.degreesToRadians(hoodDeg));
+            }, m_shooterSubsystem),
+            Commands.run(() -> {
+                m_shooterSubsystem.feedNote();
+                m_indexerSubsystem.index();
+            }, m_shooterSubsystem, m_indexerSubsystem)
+            )
+        .finallyDo(() -> {
+            m_shooterSubsystem.setFlywheelVelocities(0, 0);
+            m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
+            m_shooterSubsystem.stopFeeder();
+            m_indexerSubsystem.stopindexer();
+        })
+        );
+
+        // RT: Hub Shot — 10 deg hood, 2500 RPM (spin up then feed)
+        new Trigger(() -> m_operatorController.getRightTriggerAxis() > 0.5)
+        .whileTrue(
+            Commands.sequence(
                 Commands.runOnce(() -> {
-                    m_shooterSubsystem.setFlywheelVelocities(ShooterConstants.towerFlywheelRPM, ShooterConstants.towerFlywheelRPM);
-                    m_shooterSubsystem.setHoodPosition(Units.degreesToRadians(ShooterConstants.towerHoodAngleDeg));
+                    double rpm = NetworkValues.getInstance().getHubRPM();
+                    double hoodDeg = NetworkValues.getInstance().getHubHoodAngle();
+                    
+                    m_shooterSubsystem.setFlywheelVelocities(rpm, rpm);
+                    m_shooterSubsystem.setHoodPosition(Units.degreesToRadians(hoodDeg));
                 }, m_shooterSubsystem),
                 Commands.waitSeconds(0.5),
                 Commands.run(() -> {
                     m_shooterSubsystem.feedNote();
                     m_indexerSubsystem.index();
                 }, m_shooterSubsystem, m_indexerSubsystem)
-            )
+                )
             .finallyDo(() -> {
                 m_shooterSubsystem.setFlywheelVelocities(0, 0);
                 m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
                 m_shooterSubsystem.stopFeeder();
                 m_indexerSubsystem.stopindexer();
             })
-        );
-
-        //cross court passing from alliance zone to alliance zone (using same speed as netural to alliance but different hood)
-        new Trigger(()->m_operatorController.getLeftTriggerAxis()>0.5)
-            .whileTrue(Commands.startEnd(() -> {
-                m_shooterSubsystem.setFlywheelVelocities(NetworkValues.getInstance().getFlywheelRPM(), NetworkValues.getInstance().getFlywheelRPM());
-                m_shooterSubsystem.setHoodPosition(Units.degreesToRadians(30.0));    //maybe lower this
-                m_shooterSubsystem.feedNote();
-                m_indexerSubsystem.index();
-            }, 
-            ()->{
-                m_shooterSubsystem.setFlywheelVelocities(0, 0);
-                m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
-                m_shooterSubsystem.stopFeeder();
-                m_indexerSubsystem.stopindexer();
-            },m_shooterSubsystem,m_indexerSubsystem));
-
-        // RT: Hub Shot — 10 deg hood, 2500 RPM (spin up then feed)
-        new Trigger(() -> m_operatorController.getRightTriggerAxis() > 0.5)
-            .whileTrue(
-                Commands.sequence(
-                    Commands.runOnce(() -> {
-                        m_shooterSubsystem.setFlywheelVelocities(ShooterConstants.hubFlywheelRPM, ShooterConstants.hubFlywheelRPM);
-                        m_shooterSubsystem.setHoodPosition(Units.degreesToRadians(ShooterConstants.hubHoodAngleDeg));
-                    }, m_shooterSubsystem),
-                    Commands.waitSeconds(0.5),
-                    Commands.run(() -> {
-                        m_shooterSubsystem.feedNote();
-                        m_indexerSubsystem.index();
-                    }, m_shooterSubsystem, m_indexerSubsystem)
-                )
-                .finallyDo(() -> {
-                    m_shooterSubsystem.setFlywheelVelocities(0, 0);
-                    m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
-                    m_shooterSubsystem.stopFeeder();
-                    m_indexerSubsystem.stopindexer();
-                })
             );
 
         new JoystickButton(m_operatorController, XboxController.Button.kX.value)
@@ -426,4 +448,4 @@ public class RobotContainer {
   }
 
   
-}
+} 
