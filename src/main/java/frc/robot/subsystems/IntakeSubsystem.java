@@ -184,8 +184,8 @@ public class IntakeSubsystem extends SubsystemBase{
     public double currentPosition () {
         double currentPosition = slapdownencoder.getPosition() - absoluteOffset;
 
-        // wraps around to be within 0 and 2pi
-        return MathUtil.inputModulus(currentPosition, 0, 2 * Math.PI);
+        // wraps around to be within 0 and 2pi .. changed to -pi to pi to avoid issues from jumping between 0 and 2pi (TEST FIRST)
+        return MathUtil.inputModulus(currentPosition, -Math.PI, Math.PI);
     }
 
     // toggle function of slapdown up or down based on current position

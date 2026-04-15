@@ -31,6 +31,7 @@ public class VisionSubsystem extends SubsystemBase {
   private double ty = 0.0;
   private double avgTagDist = 0.0;
   private int[] visibleIds = new int[0];
+  private double[] rawFiducialDistances = new double[0];
   private Pose2d mt2Pose = new Pose2d();
   private double timestamp = 0.0;
   private boolean enabledVisionUpdatesPose = false;
@@ -130,8 +131,10 @@ public class VisionSubsystem extends SubsystemBase {
       timestamp = mt2.timestampSeconds;
 
       visibleIds = new int[mt2.rawFiducials.length];
+      rawFiducialDistances = new double[mt2.rawFiducials.length];
       for (int i = 0; i < mt2.rawFiducials.length; i++) {
         visibleIds[i] = mt2.rawFiducials[i].id;
+        rawFiducialDistances[i] = mt2.rawFiducials[i].distToRobot;
       }
     }
   }
@@ -144,6 +147,19 @@ public class VisionSubsystem extends SubsystemBase {
   /** Simple check if any tag is visible */
   public boolean hasTarget() {
     return tagCount > 0;
+  }
+
+  /**
+   * Returns the minimum distToRobot (meters) across all currently visible tags.
+   * Returns Double.NaN if no tags are visible.
+   */
+  public double getNearestTagDistance() {
+    if (rawFiducialDistances.length == 0) return Double.NaN;
+    double min = Double.MAX_VALUE;
+    for (double d : rawFiducialDistances) {
+      if (d > 0.0 && d < min) min = d;
+    }
+    return min == Double.MAX_VALUE ? Double.NaN : min;
   }
 
   /** Specifically checks if we see a hub tag for OUR alliance */

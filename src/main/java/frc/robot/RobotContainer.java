@@ -332,73 +332,57 @@ public class RobotContainer {
 
         // Shooter with shot calculator — auto-adjusts RPM and hood angle based on distance to target
         // Uses vision (AprilTags) if available, falls back to pose estimation
+        // Vision shot — auto-adjusts hood/RPM from tag distance, holds last valid dist to prevent jitter
+        double[] lastValidDist = {Double.NaN};
         new Trigger(() -> m_operatorController.getRightTriggerAxis() > 0.5)
-                .whileTrue(Commands.run(() -> {
-                    // Determine shooting parameters based on target detection
-                    // Prefer vision if hub tags are visible; fall back to pose-based calculation if not
-                    ShotCalculator.ShootingParameters params;
+            .whileTrue(Commands.run(() -> {
+                // Update lastValidDist only when a fresh valid reading is available
+                double rawDist = m_visionSubsystem.getNearestTagDistance();
+                if (!Double.isNaN(rawDist) && rawDist > 0.1) {
+                    lastValidDist[0] = rawDist;
+                }
+                double dist = lastValidDist[0];
 
-                    if (m_visionSubsystem.hasHubTarget()) {
-                        // calculate parameters from actual distance to hub
-                        double dist = m_visionSubsystem.getDistanceToHub();
-                        //System.out.println("Distance to hub: " + dist);
-                        Rotation2d driveAngle = m_visionSubsystem.getAllianceHubPosition()
-                                .minus(m_robotDrive.getPose().getTranslation()).getAngle();
-                        params = ShotCalculator.getInstance().calculateFromDistance(dist, driveAngle);
-                        //lastAngle = params.hoodAngleRad();
-                    }   
-                    else {
+                double hoodAngle;
+                double flywheelRPM;
 
-                        // No tag detected: use minimum hood angle and RPM values for safety
-                        // This prevents shooting at high angles/speeds when target isn't visible
-                        m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
-                        m_shooterSubsystem.setFlywheelVelocities(
-                            ShooterConstants.defaultFlywheelSpeedRPM, ShooterConstants.defaultFlywheelSpeedRPM);
-                        
-                        // Still check if ready to shoot and feed the note
-                        if (m_shooterSubsystem.isReadyToShoot()) {
-                            m_shooterSubsystem.feedNote();
-                            m_indexerSubsystem.index();
-                        }
-                        return;
-                    }
+                if (!Double.isNaN(dist) && dist > 0.1) {
+                    // Use last-known distance even if tag is briefly lost — prevents hood jitter
+                    var params = ShotCalculator.getInstance()
+                        .calculateFromDistance(dist, m_robotDrive.getPose().getRotation());
+                    hoodAngle = params.hoodAngleRad();
+                    flywheelRPM = params.flywheelSpeedRPM();
+                } else {
+                    // Never had a valid distance — safe defaults
+                    hoodAngle = ShooterConstants.hoodMinAngleRad;
+                    flywheelRPM = ShooterConstants.defaultFlywheelSpeedRPM;
+                }
 
-                    // Apply calculated hood angle and flywheel RPM values
-                    System.out.println("Delta hood angle: " + (Units.radiansToDegrees(params.hoodAngleRad()) - Units.radiansToDegrees(m_shooterSubsystem.getHoodPosition())));
-                    System.out.println("Delta flywheel RPM: " + (params.flywheelSpeedRPM() - m_shooterSubsystem.getAverageFlywheelVelocity()));
+                m_shooterSubsystem.setHoodPosition(hoodAngle);
+                m_shooterSubsystem.setFlywheelVelocities(flywheelRPM, flywheelRPM);
 
-                    m_shooterSubsystem.setHoodPosition(params.hoodAngleRad());
-                    m_shooterSubsystem.setFlywheelVelocities(params.flywheelSpeedRPM(), params.flywheelSpeedRPM());
+                System.out.println("dist: " + dist);
+                System.out.println("calculatedFlywheelRPM: " + flywheelRPM);
+                System.out.println("deltaFlywheelSpeed: " + (flywheelRPM - m_shooterSubsystem.getAverageFlywheelVelocity()));
+                System.out.println("deltaHoodPosition(0=good): " +
+                    (Units.radiansToDegrees(hoodAngle) - Units.radiansToDegrees(m_shooterSubsystem.getHoodPosition())) + " deg");
 
-                    // Only feed the note once both flywheels and hood are at target values
-                    if (m_shooterSubsystem.isReadyToShoot()) {
-                        m_shooterSubsystem.feedNote();
-                        m_indexerSubsystem.index();
-                    }
-                }, m_shooterSubsystem, m_indexerSubsystem)
-                        .finallyDo(() -> {
-                            // stop all shooter mechanisms when trigger is released
-                            m_shooterSubsystem.setFlywheelVelocities(0, 0);
-                            m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
-                            m_shooterSubsystem.stopFeeder();
-                            m_indexerSubsystem.stopindexer();
-                            ShotCalculator.getInstance().clearParameters();
-                        }));
-
-        new JoystickButton(m_operatorController, XboxController.Button.kX.value)
-            .whileTrue(Commands.startEnd(
-                () -> {
-                    m_shooterSubsystem.ejectNote();
-                    m_shooterSubsystem.setFlywheelVelocities(-NetworkValues.getInstance().getDefaultFlywheelRPM(), -NetworkValues.getInstance().getDefaultFlywheelRPM());
-                    m_indexerSubsystem.reverse();
-                },
-                () -> {
+                // Only feed once flywheels at speed AND hood at position
+                if (m_shooterSubsystem.areFlywheelsAtSpeed() && m_shooterSubsystem.isHoodAtPosition()) {
+                    m_shooterSubsystem.feedNote();
+                    m_indexerSubsystem.index();
+                } else {
                     m_shooterSubsystem.stopFeeder();
-                    m_shooterSubsystem.setFlywheelVelocities(0, 0);
                     m_indexerSubsystem.stopindexer();
-                },
-                m_shooterSubsystem, m_indexerSubsystem
-            ));
+                }
+            }, m_shooterSubsystem, m_indexerSubsystem)
+            .finallyDo(() -> {
+                m_shooterSubsystem.setFlywheelVelocities(0, 0);
+                m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
+                m_shooterSubsystem.stopFeeder();
+                m_indexerSubsystem.stopindexer();
+                ShotCalculator.getInstance().clearParameters();
+            }));
             
         //bring hood up
         /* 
