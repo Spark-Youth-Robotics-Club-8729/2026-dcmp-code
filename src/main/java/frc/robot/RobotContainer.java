@@ -231,15 +231,7 @@ public class RobotContainer {
 
            // toggle slapdown (add a check to set m_slapdown based on current angle... if angle = 0 vs. greater than 1 rad)
         new POVButton(m_operatorController, 180)
-            .onTrue(Commands.runOnce(()->{
-                if(IntakeSubsystem.count == 0){
-                    m_intakeSubsystem.slapdowndown();
-                }
-                else{
-                    m_intakeSubsystem.slapdownup();
-                }
-                //m_intakeSubsystem.slapdowntoggle();
-            },m_intakeSubsystem));
+            .onTrue(Commands.runOnce(()->{m_intakeSubsystem.slapdowntoggle();}));
         
         new POVButton(m_operatorController, 90)
             .onTrue(Commands.runOnce(()->{
