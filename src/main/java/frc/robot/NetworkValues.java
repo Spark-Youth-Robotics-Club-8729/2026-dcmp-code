@@ -12,51 +12,76 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.math.util.Units;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.ShooterConstants;
-import frc.robot.subsystems.ShotCalculator;
-import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj2.command.Command;
 
 public class NetworkValues {
     private static NetworkValues instance;
     NetworkTableInstance inst;
     private final Field2d m_field;
 
-    // OFFENSE / DEFENSE TOGGLE
-    private BooleanSubscriber offenseModeSub;
-    private boolean offenseMode = true;
-
-    //PASSING HOOD ANGLE (LIVE TUNE)
+    // PASSING (ALLIANCE)
     private DoublePublisher passHoodAnglePub;
     private DoubleSubscriber passHoodAngleSub;
     private double passHoodAngle = ShooterConstants.kDefaultPassHoodAngle;
 
-    //live tune max speed
-    DoublePublisher maxSpeedInMetersPub;
-    DoubleSubscriber maxSpeedInMetersSub;
-    double maxSpeedInMeters = DriveConstants.kMaxSpeedMetersPerSecond;
+    private DoublePublisher passRPMPub;
+    private DoubleSubscriber passRPMSub;
+    private double passRPM = ShooterConstants.maxFlywheelSpeedRPM;
+
+    // PASSING (CROSS-COURT)
+    private DoublePublisher courtHoodAnglePub;
+    private DoubleSubscriber courtHoodAngleSub;
+    private double courtHoodAngle = 26.0; 
+
+    private DoublePublisher courtRPMPub;
+    private DoubleSubscriber courtRPMSub;
+    private double courtRPM = ShooterConstants.maxFlywheelSpeedRPM;
+
+    // OFFENSE / DEFENSE TOGGLE
+    private BooleanSubscriber offenseModeSub;
+    private boolean offenseMode = true;
+
+    // HUB SHOT
+    private DoublePublisher hubHoodAnglePub;
+    private DoubleSubscriber hubHoodAngleSub;
+    private double hubHoodAngle = ShooterConstants.hubHoodAngleDeg;
+
+    private DoublePublisher hubRPMPub;
+    private DoubleSubscriber hubRPMSub;
+    private double hubRPM = ShooterConstants.hubFlywheelRPM;
+
+    // TOWER SHOT
+    private DoublePublisher towerHoodAnglePub;
+    private DoubleSubscriber towerHoodAngleSub;
+    private double towerHoodAngle = ShooterConstants.towerHoodAngleDeg;
+
+    private DoublePublisher towerRPMPub;
+    private DoubleSubscriber towerRPMSub;
+    private double towerRPM = ShooterConstants.towerFlywheelRPM;
+
+    // DRIVE
+    private DoublePublisher maxSpeedInMetersPub;
+    private DoubleSubscriber maxSpeedInMetersSub;
+    private double maxSpeedInMeters = DriveConstants.kMaxSpeedMetersPerSecond;
+
+    // live tune normal flywheel RPM
+    private DoublePublisher defaultFlywheelRPMPub;
+    private DoubleSubscriber defaultFlywheelRPMSub;
+    private double defaultFlywheelRPM = ShooterConstants.defaultFlywheelSpeedRPM;
 
     // live tune max flywheel RPM
     DoublePublisher flywheelRPMPub;
     DoubleSubscriber flywheelRPMSub;
     double flywheelRPM = ShooterConstants.maxFlywheelSpeedRPM;
 
-    //live tune normal flywheel RPM
-    DoublePublisher defaultFlywheelRPMPub;
-    DoubleSubscriber defaultFlywheelRPMSub;
-    double defaultFlywheelRPM = ShooterConstants.defaultFlywheelSpeedRPM;
-
-    //Show distance to hub
-    DoublePublisher distanceToHubPub;
-    // Show limelight (vision) measured distance to hub
-    DoublePublisher visionDistanceToHubPub;
-
     // Shooter telemetry — published for Elastic Testing tab
     private DoublePublisher shooterHoodAnglePub;
     private DoublePublisher shooterFlywheelRPMPub;
     private BooleanPublisher shooterAtSpeedPub;
     private BooleanPublisher shooterHoodAtPositionPub;
-
     // Drive telemetry — published for Elastic Driver Station tab
     private DoublePublisher driveSpeedMPSPub;
 
@@ -77,6 +102,56 @@ public class NetworkValues {
         maxSpeedInMetersPub.set(maxSpeedInMeters);
         maxSpeedInMetersSub = maxSpeedInMetersTopic.subscribe(maxSpeedInMeters);
 
+        DoubleTopic defaultRPMTopic = table.getDoubleTopic("defaultFlywheelRPM");
+        defaultFlywheelRPMPub = defaultRPMTopic.publish();
+        defaultFlywheelRPMPub.set(defaultFlywheelRPM);
+        defaultFlywheelRPMSub = defaultRPMTopic.subscribe(defaultFlywheelRPM);
+
+        // alliance pass
+        DoubleTopic passHoodTopic = table.getDoubleTopic("passHoodAngleDeg");
+        passHoodAnglePub = passHoodTopic.publish();
+        passHoodAnglePub.set(passHoodAngle);
+        passHoodAngleSub = passHoodTopic.subscribe(passHoodAngle);
+
+        DoubleTopic passRPMTopic = table.getDoubleTopic("passRPM");
+        passRPMPub = passRPMTopic.publish();
+        passRPMPub.set(passRPM);
+        passRPMSub = passRPMTopic.subscribe(passRPM);
+
+        // cross court pass
+        DoubleTopic courtHoodTopic = table.getDoubleTopic("courtHoodAngleDeg");
+        courtHoodAnglePub = courtHoodTopic.publish();
+        courtHoodAnglePub.set(courtHoodAngle);
+        courtHoodAngleSub = courtHoodTopic.subscribe(courtHoodAngle);
+        
+        DoubleTopic courtRPMTopic = table.getDoubleTopic("courtRPM"); 
+        courtRPMPub = courtRPMTopic.publish(); 
+        courtRPMPub.set(courtRPM);
+        courtRPMSub = courtRPMTopic.subscribe(courtRPM);
+
+        // hub shot
+        DoubleTopic hubHoodTopic = table.getDoubleTopic("hubHoodAngleDeg");
+        hubHoodAnglePub = hubHoodTopic.publish();
+        hubHoodAnglePub.set(hubHoodAngle);
+        hubHoodAngleSub = hubHoodTopic.subscribe(hubHoodAngle);
+
+        DoubleTopic hubRPMTopic = table.getDoubleTopic("hubRPM");
+        hubRPMPub = hubRPMTopic.publish();
+        hubRPMPub.set(hubRPM);
+        hubRPMSub = hubRPMTopic.subscribe(hubRPM);
+
+        // tower shot
+        DoubleTopic towerHoodTopic = table.getDoubleTopic("towerHoodAngleDeg");
+        towerHoodAnglePub = towerHoodTopic.publish();
+        towerHoodAnglePub.set(towerHoodAngle);
+        towerHoodAngleSub = towerHoodTopic.subscribe(towerHoodAngle);
+
+        DoubleTopic towerRPMTopic = table.getDoubleTopic("towerRPM");
+        towerRPMPub = towerRPMTopic.publish();
+        towerRPMPub.set(towerRPM);
+        towerRPMSub = towerRPMTopic.subscribe(towerRPM);
+
+        //flywheel
         DoubleTopic flywheelTopic = table.getDoubleTopic("passing RPM");
         flywheelRPMPub = flywheelTopic.publish();
         flywheelRPMPub.set(flywheelRPM);
@@ -87,22 +162,8 @@ public class NetworkValues {
         defaultFlywheelRPMPub.set(defaultFlywheelRPM);
         defaultFlywheelRPMSub = defaultFlywheelTopic.subscribe(defaultFlywheelRPM);
 
-        // passing hood angle
-        DoubleTopic hoodAngleTopic = table.getDoubleTopic("passHoodAngleDeg");
-        passHoodAnglePub = hoodAngleTopic.publish();
-        passHoodAnglePub.set(passHoodAngle);
-        passHoodAngleSub = hoodAngleTopic.subscribe(passHoodAngle);
-
         //offense/defense
         offenseModeSub = table.getBooleanTopic("offenseMode").subscribe(true);
-
-        // pose-based distance (from ShotCalculator / pose estimation)
-        DoubleTopic distanceToHubPoseTopic = table.getDoubleTopic("distanceToHubPose");
-        distanceToHubPub = distanceToHubPoseTopic.publish();
-
-        // vision-based distance (from Limelight)
-        DoubleTopic distanceToHubVisionTopic = table.getDoubleTopic("distanceToHubVision");
-        visionDistanceToHubPub = distanceToHubVisionTopic.publish();
 
         // Shooter telemetry (for Elastic Testing tab)
         NetworkTable shooterTable = inst.getTable("shooter");
@@ -140,23 +201,56 @@ public class NetworkValues {
         return offenseMode;
     }
 
-    public double getPassingHoodAngle() {
+    public double getPassHoodAngle() {
         return passHoodAngle;
+    }
+    public double getPassRPM() {
+        return passRPM;
+    }
+
+    public double getCourtHoodAngle() {
+        return courtHoodAngle; 
+    }
+    public double getCourtRPM() {
+        return courtRPM; 
+    }
+
+    public double getHubHoodAngle() {
+        return hubHoodAngle; 
+    }
+    public double getHubRPM() {
+        return hubRPM; 
+    }
+
+    public double getTowerHoodAngle() {
+        return towerHoodAngle; 
+    }
+    public double getTowerRPM() {
+        return towerRPM; 
+    }
+
+    public void systemTest(Command command) {
+        SmartDashboard.putData("System Test", command);
     }
 
     public void periodic(RobotContainer robotContainer) {
+
         defaultFlywheelRPM = defaultFlywheelRPMSub.get();
         flywheelRPM = flywheelRPMSub.get();
         maxSpeedInMeters = maxSpeedInMetersSub.get();
-        passHoodAngle = passHoodAngleSub.get();
         offenseMode = offenseModeSub.get();
 
-        // publish pose-based distance calculated by ShotCalculator
-        distanceToHubPub.set(ShotCalculator.getInstance().getDistanceToTarget());
+        passHoodAngle = passHoodAngleSub.get();
+        passRPM = passRPMSub.get();
 
-        // publish vision-based limelight distance (may be NaN if no tag visible)
-        double visionDist = robotContainer.getVisionSubsystem().getDistanceToHub();
-        visionDistanceToHubPub.set(Double.isNaN(visionDist) ? -1.0 : visionDist);
+        courtHoodAngle = courtHoodAngleSub.get();
+        courtRPM = courtRPMSub.get();
+
+        hubHoodAngle = hubHoodAngleSub.get();
+        hubRPM = hubRPMSub.get();
+
+        towerHoodAngle = towerHoodAngleSub.get();
+        towerRPM = towerRPMSub.get();
 
         // Publish shooter telemetry for Elastic Testing tab
         var shooter = robotContainer.getShooterSubsystem();

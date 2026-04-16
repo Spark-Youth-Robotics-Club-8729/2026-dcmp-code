@@ -20,7 +20,6 @@ import edu.wpi.first.util.sendable.SendableBuilder;
 import com.studica.frc.AHRS;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.DriveConstants;
-import frc.robot.LimelightHelpers;
 import frc.robot.Constants;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.MAXSwerveModule;
@@ -191,14 +190,6 @@ public class DriveSubsystem extends SubsystemBase {
     m_rearLeft.resetEncoders();
     m_frontRight.resetEncoders();
     m_rearRight.resetEncoders();
-  }
-
-  /** Zeroes the heading of the robot. */
-  public void zeroHeading() {
-    m_gyro.reset();
-    //make sure that the limelight is reset or else field-relative driving and pose estimation will be messed up until the limelight gets a 
-    //new target and resets itself, which can cause issues if the robot starts on the field with a valid target in view
-    LimelightHelpers.SetRobotOrientation(Constants.VisionConstants.CAMERA_NAME, 0, 0, 0, 0, 0, 0);
   }
 
   /** Stop all motors like a good boy. */

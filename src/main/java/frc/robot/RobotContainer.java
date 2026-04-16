@@ -32,8 +32,6 @@ import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.IndexerSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
-import frc.robot.subsystems.VisionSubsystem;
-import frc.robot.subsystems.ShotCalculator;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
@@ -58,17 +56,13 @@ public class RobotContainer {
   public DriveSubsystem getDriveSubsystem() {
     return m_robotDrive;
     }
-    public VisionSubsystem getVisionSubsystem() {
-        return m_visionSubsystem;
-    }
-    public ShooterSubsystem getShooterSubsystem() {
-        return m_shooterSubsystem;
-    }
+  public ShooterSubsystem getShooterSubsystem() {
+    return m_shooterSubsystem;
+  }
   private final DriveSubsystem m_robotDrive = new DriveSubsystem();
   private final IndexerSubsystem m_indexerSubsystem = new IndexerSubsystem();
   private final IntakeSubsystem m_intakeSubsystem = new IntakeSubsystem();
   private final ShooterSubsystem m_shooterSubsystem = new ShooterSubsystem();
-  private final VisionSubsystem m_visionSubsystem = new VisionSubsystem(() -> Rotation2d.fromDegrees(m_robotDrive.getHeading()),null);
   // The driver's controller
   XboxController m_driverController = new XboxController(OIConstants.kDriverControllerPort);
   XboxController m_operatorController = new XboxController(OIConstants.kOperatorControllerPort);
@@ -88,22 +82,26 @@ public class RobotContainer {
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
   public RobotContainer() {
-    // Initialize shot calculator
-    ShotCalculator.initialize(m_robotDrive::getPose, m_robotDrive::getVelocity, m_visionSubsystem.getAllianceHubPosition());
     // Configure the button bindings
     configureButtonBindings();
-
+    m_snapController.enableContinuousInput(-180.0, 180.0);
+    m_snapController.setTolerance(DriveConstants.snapTolerance);
     // Configure default commands
     m_robotDrive.setDefaultCommand(
         // The left stick controls translation of the robot.
         // Turning is controlled by the X axis of the right stick.
         new RunCommand(
             () -> m_robotDrive.drive(
-                -MathUtil.applyDeadband(m_driverController.getLeftY(), OIConstants.kDriveDeadband),
-                -MathUtil.applyDeadband(m_driverController.getLeftX(), OIConstants.kDriveDeadband),
-                -MathUtil.applyDeadband(m_driverController.getRightX(), OIConstants.kDriveDeadband),
-                m_fieldRelative),
-            m_robotDrive));
+                -MathUtil.applyDeadband(m_driverController.getLeftY(), OIConstants.kDriveDeadband) 
+                * NetworkValues.getInstance().GetMaxSpeedInMeters(), // Added this
+            -MathUtil.applyDeadband(m_driverController.getLeftX(), OIConstants.kDriveDeadband) 
+                * NetworkValues.getInstance().GetMaxSpeedInMeters(), // Added this
+            -MathUtil.applyDeadband(m_driverController.getRightX(), OIConstants.kDriveDeadband),
+            m_fieldRelative),
+        m_robotDrive)); 
+
+        NetworkValues.getInstance().systemTest(
+        new SystemTestCommand(m_robotDrive).withName("Full System Test"));
   }
 
   /**
@@ -203,10 +201,9 @@ public class RobotContainer {
         new Trigger(() -> m_driverController.getLeftTriggerAxis() > 0.5)
            .whileTrue(new RunCommand(() -> {
                 System.out.println("Zeroing gyro!");
-                m_robotDrive.zeroHeading();
             }, m_robotDrive));
 
-            
+
         // OPERATOR          
         
         //intake toggle right bumper
@@ -264,7 +261,7 @@ public class RobotContainer {
             Commands.sequence(
                 Commands.runOnce(() -> {
                     double hoodAngleRad = Units.degreesToRadians(
-                        NetworkValues.getInstance().getPassingHoodAngle()
+                        NetworkValues.getInstance().getPassHoodAngle()
                     );
                     m_shooterSubsystem.setFlywheelVelocities(
                         NetworkValues.getInstance().getFlywheelRPM(),
@@ -290,116 +287,81 @@ public class RobotContainer {
                 m_indexerSubsystem.stopindexer();
             })
         );
-        // Tower Shot preset — 20 deg, 3200 RPM
+        // A: Tower Shot — 20 deg hood, 3200 RPM (spin up then feed)
         new JoystickButton(m_operatorController, XboxController.Button.kA.value)
         .whileTrue(
             Commands.sequence(
-                Commands.runOnce(() -> {
-                    m_shooterSubsystem.setFlywheelVelocities(ShooterConstants.towerFlywheelRPM, ShooterConstants.towerFlywheelRPM);
-                    m_shooterSubsystem.setHoodPosition(Units.degreesToRadians(ShooterConstants.towerHoodAngleDeg));
-                }, m_shooterSubsystem),
-                Commands.waitSeconds(0.5),
-                Commands.run(() -> {
-                    m_shooterSubsystem.feedNote();
-                    m_indexerSubsystem.index();
-                }, m_shooterSubsystem, m_indexerSubsystem)
-            )
-            .finallyDo(() -> {
-                m_shooterSubsystem.setFlywheelVelocities(0, 0);
-                m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
-                m_shooterSubsystem.stopFeeder();
-                m_indexerSubsystem.stopindexer();
-            })
-        );
-
-        // Hub Shot preset — 10 deg, 2500 RPM
-        new JoystickButton(m_operatorController, XboxController.Button.kStart.value)
-        .whileTrue(
-            Commands.sequence(
-                Commands.runOnce(() -> {
-                    m_shooterSubsystem.setFlywheelVelocities(ShooterConstants.hubFlywheelRPM, ShooterConstants.hubFlywheelRPM);
-                    m_shooterSubsystem.setHoodPosition(Units.degreesToRadians(ShooterConstants.hubHoodAngleDeg));
-                }, m_shooterSubsystem),
-                Commands.waitSeconds(0.5),
-                Commands.run(() -> {
-                    m_shooterSubsystem.feedNote();
-                    m_indexerSubsystem.index();
-                }, m_shooterSubsystem, m_indexerSubsystem)
-            )
-            .finallyDo(() -> {
-                m_shooterSubsystem.setFlywheelVelocities(0, 0);
-                m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
-                m_shooterSubsystem.stopFeeder();
-                m_indexerSubsystem.stopindexer();
-            })
+            Commands.runOnce(() -> {
+                // network tables
+                double rpm = NetworkValues.getInstance().getTowerRPM();
+                double hoodDeg = NetworkValues.getInstance().getTowerHoodAngle();
+                
+                m_shooterSubsystem.setFlywheelVelocities(rpm, rpm);
+                m_shooterSubsystem.setHoodPosition(Units.degreesToRadians(hoodDeg));
+            }, m_shooterSubsystem),
+            Commands.waitSeconds(0.5),
+            Commands.run(() -> {
+                m_shooterSubsystem.feedNote();
+                m_indexerSubsystem.index();
+            }, m_shooterSubsystem, m_indexerSubsystem)
+        )
+        .finallyDo(() -> {
+            m_shooterSubsystem.setFlywheelVelocities(0, 0);
+            m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
+            m_shooterSubsystem.stopFeeder();
+            m_indexerSubsystem.stopindexer();
+        })
         );
 
         //cross court passing from alliance zone to alliance zone (using same speed as netural to alliance but different hood)
-        new Trigger(()->m_operatorController.getLeftTriggerAxis()>0.5)
-            .whileTrue(Commands.startEnd(() -> {
-                m_shooterSubsystem.setFlywheelVelocities(NetworkValues.getInstance().getFlywheelRPM(), NetworkValues.getInstance().getFlywheelRPM());
-                m_shooterSubsystem.setHoodPosition(Units.degreesToRadians(30.0));    //maybe lower this
+        new Trigger(() -> m_operatorController.getLeftTriggerAxis() > 0.5)
+        .whileTrue(
+        Commands.sequence(
+            Commands.runOnce(() -> {
+                // pls work
+                double rpm = NetworkValues.getInstance().getCourtRPM();
+                double hoodDeg = NetworkValues.getInstance().getCourtHoodAngle();
+                
+                m_shooterSubsystem.setFlywheelVelocities(rpm, rpm);
+                m_shooterSubsystem.setHoodPosition(Units.degreesToRadians(hoodDeg));
+            }, m_shooterSubsystem),
+            Commands.run(() -> {
                 m_shooterSubsystem.feedNote();
                 m_indexerSubsystem.index();
-            }, 
-            ()->{
-                m_shooterSubsystem.setFlywheelVelocities(0, 0);
-                m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
-                m_shooterSubsystem.stopFeeder();
-                m_indexerSubsystem.stopindexer();
-            },m_shooterSubsystem,m_indexerSubsystem));
+            }, m_shooterSubsystem, m_indexerSubsystem)
+            )
+        .finallyDo(() -> {
+            m_shooterSubsystem.setFlywheelVelocities(0, 0);
+            m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
+            m_shooterSubsystem.stopFeeder();
+            m_indexerSubsystem.stopindexer();
+        })
+        );
 
-        // Vision shot — auto-adjusts hood/RPM from tag distance, holds last valid dist to prevent jitter
-        double[] lastValidDist = {Double.NaN};
+        // RT: Hub Shot — 10 deg hood, 2500 RPM (spin up then feed)
         new Trigger(() -> m_operatorController.getRightTriggerAxis() > 0.5)
-            .whileTrue(Commands.run(() -> {
-                // Update lastValidDist only when a fresh valid reading is available
-                double rawDist = m_visionSubsystem.getNearestTagDistance();
-                if (!Double.isNaN(rawDist) && rawDist > 0.1) {
-                    lastValidDist[0] = rawDist;
-                }
-                double dist = lastValidDist[0];
-
-                double hoodAngle;
-                double flywheelRPM;
-
-                if (!Double.isNaN(dist) && dist > 0.1) {
-                    // Use last-known distance even if tag is briefly lost — prevents hood jitter
-                    var params = ShotCalculator.getInstance()
-                        .calculateFromDistance(dist, m_robotDrive.getPose().getRotation());
-                    hoodAngle = params.hoodAngleRad();
-                    flywheelRPM = params.flywheelSpeedRPM();
-                } else {
-                    // Never had a valid distance — safe defaults
-                    hoodAngle = ShooterConstants.hoodMinAngleRad;
-                    flywheelRPM = ShooterConstants.defaultFlywheelSpeedRPM;
-                }
-
-                m_shooterSubsystem.setHoodPosition(hoodAngle);
-                m_shooterSubsystem.setFlywheelVelocities(flywheelRPM, flywheelRPM);
-
-                System.out.println("dist: " + dist);
-                System.out.println("calculatedFlywheelRPM: " + flywheelRPM);
-                System.out.println("deltaFlywheelSpeed: " + (flywheelRPM - m_shooterSubsystem.getAverageFlywheelVelocity()));
-                System.out.println("deltaHoodPosition(0=good): " +
-                    (Units.radiansToDegrees(hoodAngle) - Units.radiansToDegrees(m_shooterSubsystem.getHoodPosition())) + " deg");
-
-                // Only feed once flywheels at speed AND hood at position
-                if (m_shooterSubsystem.areFlywheelsAtSpeed() && m_shooterSubsystem.isHoodAtPosition()) {
+        .whileTrue(
+            Commands.sequence(
+                Commands.runOnce(() -> {
+                    double rpm = NetworkValues.getInstance().getHubRPM();
+                    double hoodDeg = NetworkValues.getInstance().getHubHoodAngle();
+                    
+                    m_shooterSubsystem.setFlywheelVelocities(rpm, rpm);
+                    m_shooterSubsystem.setHoodPosition(Units.degreesToRadians(hoodDeg));
+                }, m_shooterSubsystem),
+                Commands.waitSeconds(0.5),
+                Commands.run(() -> {
                     m_shooterSubsystem.feedNote();
                     m_indexerSubsystem.index();
-                } else {
-                    m_shooterSubsystem.stopFeeder();
-                    m_indexerSubsystem.stopindexer();
-                }
-            }, m_shooterSubsystem, m_indexerSubsystem)
+                }, m_shooterSubsystem, m_indexerSubsystem)
+                )
             .finallyDo(() -> {
                 m_shooterSubsystem.setFlywheelVelocities(0, 0);
                 m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
                 m_shooterSubsystem.stopFeeder();
                 m_indexerSubsystem.stopindexer();
-                ShotCalculator.getInstance().clearParameters();
-            }));
+            })
+            );
 
         new JoystickButton(m_operatorController, XboxController.Button.kX.value)
             .whileTrue(Commands.startEnd(
