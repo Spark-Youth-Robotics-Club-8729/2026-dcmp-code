@@ -126,17 +126,18 @@ public class RobotContainer {
          * - POV Up ............... Test Everything (works!)
          * ----------------------------------------------
          * OPERATOR CONTROLS (Port 1)
-         * - RT (Right Trigger) ... Shooting (havent tested yet)
-         * - LT (Left Trigger) .... Passing (havent tested yet)
-         * - RB (Right Bumper) .... Intake (havent tested yet)
-         * - LB (Left Bumper) ..... Outtake (havent tested yet)
-         * - X Button ............. Unjam (havent tested yet)
-         * - POV Up ............... Tunable shooting with elastic 
-         * - POV Down ............. Slapdown (havent tested yet)
-         * - POV Left ............. Hood Angle Down (havent tested yet)
-         * - POV Right ............ Hood Angle Up (havent tested yet)
-         * - Y .................... flywheel ONLY
-         * - A .................... manual shoot
+         
+     * B (Hold) ............ Manual Index: Manually runs the indexer at feed voltage
+     * X (Hold) ............ Unjam/Eject: Reverses shooter, feeder, and indexer
+     * Y (Hold) ............ Flywheel Only: Spins flywheels
+     * * Right Bumper (RB) ... Intake Toggle: Toggles intake motor
+     * Left Bumper (LB) .... Outtake (Hold): Runs intake in reverse
+     * * Right Trigger (>0.5). Hub Shot: Sets Hood/RPM for Hub, waits 0.5s, then feeds
+     * Left Trigger (>0.5) . Court Pass: Cross-court pass logic (Court Hood/RPM)
+     * POV Up (0) .......... Pass Shot: Sets Hood/RPM for Passing, waits 0.5s, then feeds
+     * POV Down (180) ...... Slapdown Toggle: Toggles the intake slapdown position
+     * POV Right (90) ...... Hood MAX/Slapdown DOWN: Sets hood to max angle
+     * POV Left (270) ...... Hood MIN/Slapdown UP: Sets hood to min angle
          */
 
         // Single press of X sets the robot into X formation
