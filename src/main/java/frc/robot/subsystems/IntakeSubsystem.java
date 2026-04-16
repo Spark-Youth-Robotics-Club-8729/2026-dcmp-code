@@ -163,7 +163,7 @@ public class IntakeSubsystem extends SubsystemBase{
     
     public void slapdownjitterDown(double angle){
         // Return exactly to where we started (get the jitterAnchor when you press the button intially)
-        if (angle > 1.5) {
+        if (angle > 1.45) {
             slapdowntarget = angle;
         } else {
             slapdowntarget = angle + intakeconstants.jitterRangeRad;
@@ -195,7 +195,7 @@ public class IntakeSubsystem extends SubsystemBase{
         // true is when the slapdown is up ()
         boolean slapState = true;
 
-        if((0.4 < currentPosition && currentPosition < 1.0)) {
+        if((0.4 < currentPosition && currentPosition < 3.0)) {
             slapState = false;
         } else {
             slapState = true;
