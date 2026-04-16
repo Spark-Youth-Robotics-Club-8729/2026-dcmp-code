@@ -9,11 +9,9 @@ import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkBase.ResetMode;
+
 import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.filter.Debouncer;
-import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.wpilibj.Alert;
-import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -27,16 +25,10 @@ import com.revrobotics.REVLibError;
 import com.revrobotics.spark.SparkBase;
 
 public class IntakeSubsystem extends SubsystemBase{
+    public static int count = 0;
     private final TalonFX  intakemotor;
     private final SparkMax slapdownmotor;
     private final AbsoluteEncoder slapdownencoder;
-    private final Debouncer slapdownSettleDebouncer = new Debouncer(0.15, DebounceType.kRising);
-    // Detect bumper contact (stall) and stop driving the slapdown PID when we hit a hard stop
-    //private DigitalInput limitSwitch = new DigitalInput(intakeconstants.LIMIT_PORT);
-    DigitalInput toplimitSwitch = new DigitalInput(0);
-
-    private final Debouncer slapdownStallDebouncer =
-            new Debouncer(0.15, DebounceType.kRising);
     private PIDController slapdownPID;
     private double slapdowntarget;
     public double commandVoltage;
@@ -60,25 +52,16 @@ public class IntakeSubsystem extends SubsystemBase{
 
     }
     
-    //private final Debouncer limitDebouncer = new Debouncer(0.05, DebounceType.kBoth);
     private final Alert  motordisconnect = new Alert("Intake motor disconnected", Alert.AlertType.kWarning);
 
     public void periodic() {
+        
         double output = slapdownPID.calculate(slapdownencoder.getPosition(), slapdowntarget)*intakeconstants.slapdowngearratio;
-        //System.out.println("angle "+slapdownencoder.getPosition());
-        System.out.println("limit switch state"+toplimitSwitch.get());
-        //is true when detects magnet
-        
-        // Stall detection: if motor is stalled (high voltage, high current, low velocity), set output to 0
-        boolean slapdownStalled = slapdownStallDebouncer.calculate(
-            Math.abs(output) >= intakeconstants.slapdownStallAppliedVolts
-                && Math.abs(slapdownencoder.getVelocity()) <= intakeconstants.slapdownStallVelocityRadPerSec);
-        
-        if (slapdownStalled) {
-            output = 0;
-        }
         
         slapdownmotor.setVoltage(output);
+
+        System.out.println("current position: " + slapdownencoder.getPosition());
+        System.out.println("target: " + slapdowntarget);
 
         // use for logging and elastic in the future
     }
@@ -104,18 +87,18 @@ public class IntakeSubsystem extends SubsystemBase{
 
     //slapdown 
     public void slapdowndown(){
-        //sets the goal and the new PID
         slapdowntarget = intakeconstants.slapdownDownAngleRad;
         slapdownPID = new PIDController(intakeconstants.slapdownDownKp, intakeconstants.slapdownDownKi, intakeconstants.slapdownDownKd);
         slapdownPID.setTolerance(intakeconstants.slapdownToleranceRad);
         slapdownPID.enableContinuousInput(0, 2 * Math.PI);
+        count = 1;
     }
     public void slapdownup(){
-        //sets the goal and the new PID
         slapdowntarget = intakeconstants.slapdownUpAngleRad;
         slapdownPID = new PIDController(intakeconstants.slapdownUpKp, intakeconstants.slapdownUpKi, intakeconstants.slapdownUpKd);
         slapdownPID.setTolerance(intakeconstants.slapdownToleranceRad);
         slapdownPID.enableContinuousInput(0, 2 * Math.PI);
+        count = 0;
     }
 
     public void slapdowntoggle(){
