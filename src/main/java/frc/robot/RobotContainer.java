@@ -232,28 +232,23 @@ public class RobotContainer {
            // toggle slapdown (add a check to set m_slapdown based on current angle... if angle = 0 vs. greater than 1 rad)
         new POVButton(m_operatorController, 180)
             .onTrue(Commands.runOnce(()->{
-                if(m_slapdown) {
+                if(IntakeSubsystem.count == 0){
                     m_intakeSubsystem.slapdowndown();
-                    m_slapdown = false;
-                    //System.out.println("angle"+slapdownencoder.getPosition());
                 }
-                else {
+                else{
                     m_intakeSubsystem.slapdownup();
-                    m_slapdown = true;
                 }
+                //m_intakeSubsystem.slapdowntoggle();
             },m_intakeSubsystem));
         
-
-        // new POVButton(m_operatorController, 90)
-        //     .onTrue(Commands.runOnce(()->{
-        //         m_intakeSubsystem.slapdowndown();
-        //     },m_intakeSubsystem));
-
-    //down arrow does up and down, right arrow does slapdown DOWN and left arrow does slapdown UP
-        // new POVButton(m_operatorController, 270)
-        //     .onTrue(Commands.runOnce(()->{
-        //         m_intakeSubsystem.slapdownup();
-        //     },m_intakeSubsystem));
+        new POVButton(m_operatorController, 90)
+            .onTrue(Commands.runOnce(()->{
+                m_intakeSubsystem.slapdowndown();
+            },m_intakeSubsystem));
+        new POVButton(m_operatorController, 270)
+            .onTrue(Commands.runOnce(()->{
+                m_intakeSubsystem.slapdownup();
+            },m_intakeSubsystem));
         
         // passing from neutral zone to alliance zone (LIVE EDITABLE HOOD AND SPEEDS) with time delay for indexer
         new POVButton(m_operatorController, 0)
