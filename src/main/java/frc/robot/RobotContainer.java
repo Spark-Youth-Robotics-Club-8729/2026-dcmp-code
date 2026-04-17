@@ -119,25 +119,24 @@ public class RobotContainer {
          * - Left Joystick ........ Drive (works!)
          * - Right Joystick ....... Turn (works!)
          * - B Button ............. Robot to Field (works)
-         * - LT (Left Trigger) .... Reset Gyro to 0 (works!)
+         * - LT (Left Trigger) .... Reset Gyro to 0
          * - A Button ............. Snap to 0° (works!)
          * - X ... Lock Wheels to X (works!)
-         * - POV Down ............. Swtich to defnese speed (DOES NOT WORKKK)
          * - POV Up ............... Test Everything (works!)
          * ----------------------------------------------
          * OPERATOR CONTROLS (Port 1)
-         
-     * B (Hold) ............ Manual Index: Manually runs the indexer at feed voltage
+         * A ................. tower shot, waits 0.3 sec
+     * B (Hold) ............ Passing Shot: alliance to netural, waits 0.3s, then feeds
      * X (Hold) ............ Unjam/Eject: Reverses shooter, feeder, and indexer
      * Y (Hold) ............ Flywheel Only: Spins flywheels
-     * * Right Bumper (RB) ... Intake Toggle: Toggles intake motor
+     * Right Bumper (RB) ... Intake Toggle: Toggles intake motor
      * Left Bumper (LB) .... Outtake (Hold): Runs intake in reverse
-     * * Right Trigger (>0.5). Hub Shot: Sets Hood/RPM for Hub, waits 0.5s, then feeds
-     * Left Trigger (>0.5) . Court Pass: Cross-court pass logic (Court Hood/RPM)
-     * POV Up (0) .......... Pass Shot: Sets Hood/RPM for Passing, waits 0.5s, then feeds
+     * Right Trigger (>0.5). Hub Shot: Sets Hood/RPM for Hub, waits 0.3s, then feeds
+     * Left Trigger (>0.5) . Court Pass: Cross-court pass logic (Court Hood/RPM), waits 0.3 sec
+     * POV Up (0) .......... Manual Index: Manually runs the indexer at feed voltage
      * POV Down (180) ...... Slapdown Toggle: Toggles the intake slapdown position
-     * POV Right (90) ...... Hood MAX/Slapdown DOWN: Sets hood to max angle
-     * POV Left (270) ...... Hood MIN/Slapdown UP: Sets hood to min angle
+     * POV Right (90) ...... Hood MAX: Sets hood to max angle
+     * POV Left (270) ...... Hood MIN: Sets hood to min angle
          */
 
         // Single press of X sets the robot into X formation
@@ -149,7 +148,7 @@ public class RobotContainer {
                     Math.abs(m_driverController.getRightX()) > OIConstants.kDriveDeadband
                 ));
 
-        // Single press of Start button zeroes the gyro heading
+        // Snaps to 0 of the gyro
         new JoystickButton(m_driverController, XboxController.Button.kA.value)
          .whileTrue(new RunCommand(() -> {
                 double heading = m_robotDrive.getHeading();
@@ -171,9 +170,7 @@ public class RobotContainer {
                 }
             }, m_robotDrive));
 
-
-        // In configureButtonBindings()
-
+        //switch from field to robot
         new JoystickButton(m_driverController, XboxController.Button.kB.value)
             .onTrue(new InstantCommand(() ->
         {
@@ -182,25 +179,14 @@ public class RobotContainer {
         }
              ));
 
+             // system test command
         new POVButton(m_driverController, 0)   
             .onTrue(new SystemTestCommand(m_robotDrive));
 
-
-        /* 
-        new POVButton(m_driverController, 180) 
-            .onTrue(new InstantCommand(() ->
-        {
-            DriveConstants.kMaxSpeedMetersPerSecond = 0.1;
-        }
-             ));
-
-        */
-
-        new JoystickButton(m_driverController, XboxController.Button.kY.value)    
-            .onTrue(new SystemTestCommand(m_robotDrive));
-
+        // SHOULD 0 the gyro...
         new Trigger(() -> m_driverController.getLeftTriggerAxis() > 0.5)
-           .whileTrue(new RunCommand(() -> {
+           .onTrue(new RunCommand(() -> {
+                m_robotDrive.resetGyro();
                 System.out.println("Zeroing gyro!");
             }, m_robotDrive));
 
@@ -220,31 +206,16 @@ public class RobotContainer {
                     }
                 },m_intakeSubsystem));
 
+                // outtake
         new JoystickButton(m_operatorController, XboxController.Button.kLeftBumper.value)
            .whileTrue(Commands.startEnd(() -> m_intakeSubsystem.outtake(), ()->m_intakeSubsystem.stopintake()));
 
+           // run flywheels at flywheel rpm
         new JoystickButton(m_operatorController, XboxController.Button.kY.value)
            .whileTrue(Commands.startEnd(() ->  m_shooterSubsystem.setFlywheelVelocities(NetworkValues.getInstance().getFlywheelRPM(), NetworkValues.getInstance().getFlywheelRPM()), ()->m_shooterSubsystem.setFlywheelVelocities(0, 0)));
 
+           // passing from alliance to neutral
         new JoystickButton(m_operatorController, XboxController.Button.kB.value)
-           .whileTrue(Commands.startEnd(() -> m_indexerSubsystem.setVoltage(indexerconstants.feedVolts), ()->m_indexerSubsystem.stopindexer()));
-
-
-           // toggle slapdown (add a check to set m_slapdown based on current angle... if angle = 0 vs. greater than 1 rad)
-        new POVButton(m_operatorController, 180)
-            .onTrue(Commands.runOnce(()->{m_intakeSubsystem.slapdowntoggle();}));
-        
-        new POVButton(m_operatorController, 90)
-            .onTrue(Commands.runOnce(()->{
-                m_intakeSubsystem.slapdowndown();
-            },m_intakeSubsystem));
-        new POVButton(m_operatorController, 270)
-            .onTrue(Commands.runOnce(()->{
-                m_intakeSubsystem.slapdownup();
-            },m_intakeSubsystem));
-        
-        // passing from neutral zone to alliance zone (LIVE EDITABLE HOOD AND SPEEDS) with time delay for indexer
-        new POVButton(m_operatorController, 0)
         .whileTrue(
             Commands.sequence(
                 Commands.runOnce(() -> {
@@ -252,14 +223,14 @@ public class RobotContainer {
                         NetworkValues.getInstance().getPassHoodAngle()
                     );
                     m_shooterSubsystem.setFlywheelVelocities(
-                        NetworkValues.getInstance().getFlywheelRPM(),
-                        NetworkValues.getInstance().getFlywheelRPM()
+                        NetworkValues.getInstance().getPassRPM(),
+                        NetworkValues.getInstance().getPassRPM()
                     );
                     m_shooterSubsystem.setHoodPosition(hoodAngleRad);
                 }, m_shooterSubsystem),
 
                 // Wait for spin-up
-                Commands.waitSeconds(0.5),
+                Commands.waitSeconds(0.3),
 
                 // Feed note
                 Commands.run(() -> {
@@ -275,6 +246,28 @@ public class RobotContainer {
                 m_indexerSubsystem.stopindexer();
             })
         );
+
+
+           // toggle slapdown (add a check to set m_slapdown based on current angle)
+        new POVButton(m_operatorController, 180)
+            .onTrue(Commands.runOnce(()->{m_intakeSubsystem.slapdowntoggle();}));
+        
+            // set hood angle to max
+        new POVButton(m_operatorController, 90)
+            .onTrue(Commands.runOnce(()->{
+                m_shooterSubsystem.setHoodPosition(Constants.ShooterConstants.hoodMaxAngleRad);
+            },m_shooterSubsystem));
+
+            // set hood anlge to min
+        new POVButton(m_operatorController, 270)
+            .onTrue(Commands.runOnce(()->{
+                m_shooterSubsystem.setHoodPosition(Constants.ShooterConstants.hoodMinAngleRad);;
+            },m_shooterSubsystem));
+        
+        // run indexer
+        new POVButton(m_operatorController, 0)
+        .whileTrue(Commands.startEnd(() -> m_indexerSubsystem.setVoltage(indexerconstants.feedVolts), ()->m_indexerSubsystem.stopindexer()));
+        
         // A: Tower Shot — 20 deg hood, 3200 RPM (spin up then feed)
         new JoystickButton(m_operatorController, XboxController.Button.kA.value)
         .whileTrue(
@@ -287,7 +280,7 @@ public class RobotContainer {
                 m_shooterSubsystem.setFlywheelVelocities(rpm, rpm);
                 m_shooterSubsystem.setHoodPosition(Units.degreesToRadians(hoodDeg));
             }, m_shooterSubsystem),
-            Commands.waitSeconds(0.5),
+            Commands.waitSeconds(0.3),
             Commands.run(() -> {
                 m_shooterSubsystem.feedNote();
                 m_indexerSubsystem.index();
@@ -306,13 +299,13 @@ public class RobotContainer {
         .whileTrue(
         Commands.sequence(
             Commands.runOnce(() -> {
-                // pls work
                 double rpm = NetworkValues.getInstance().getCourtRPM();
                 double hoodDeg = NetworkValues.getInstance().getCourtHoodAngle();
                 
                 m_shooterSubsystem.setFlywheelVelocities(rpm, rpm);
                 m_shooterSubsystem.setHoodPosition(Units.degreesToRadians(hoodDeg));
             }, m_shooterSubsystem),
+            Commands.waitSeconds(0.3),
             Commands.run(() -> {
                 m_shooterSubsystem.feedNote();
                 m_indexerSubsystem.index();
@@ -337,7 +330,7 @@ public class RobotContainer {
                     m_shooterSubsystem.setFlywheelVelocities(rpm, rpm);
                     m_shooterSubsystem.setHoodPosition(Units.degreesToRadians(hoodDeg));
                 }, m_shooterSubsystem),
-                Commands.waitSeconds(0.5),
+                Commands.waitSeconds(0.3),
                 Commands.run(() -> {
                     m_shooterSubsystem.feedNote();
                     m_indexerSubsystem.index();
@@ -351,6 +344,7 @@ public class RobotContainer {
             })
             );
 
+            //reverse everything
         new JoystickButton(m_operatorController, XboxController.Button.kX.value)
             .whileTrue(Commands.startEnd(
                 () -> {
@@ -366,7 +360,7 @@ public class RobotContainer {
                 m_shooterSubsystem, m_indexerSubsystem
             ));
             
-        //bring hood up
+        //bring hood up (add jitter one later...)
         new POVButton(m_operatorController, 90)
              .onTrue(Commands.runOnce(()->{
                  m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMaxAngleRad);

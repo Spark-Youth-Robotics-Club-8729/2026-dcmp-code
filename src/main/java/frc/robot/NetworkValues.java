@@ -41,8 +41,8 @@ public class NetworkValues {
     private double courtRPM = ShooterConstants.maxFlywheelSpeedRPM;
 
     // OFFENSE / DEFENSE TOGGLE
-    private BooleanSubscriber offenseModeSub;
-    private boolean offenseMode = true;
+    //private BooleanSubscriber offenseModeSub;
+    //private boolean offenseMode = true;
 
     // HUB SHOT
     private DoublePublisher hubHoodAnglePub;
@@ -163,7 +163,7 @@ public class NetworkValues {
         defaultFlywheelRPMSub = defaultFlywheelTopic.subscribe(defaultFlywheelRPM);
 
         //offense/defense
-        offenseModeSub = table.getBooleanTopic("offenseMode").subscribe(true);
+        //offenseModeSub = table.getBooleanTopic("offenseMode").subscribe(true);
 
         // Shooter telemetry (for Elastic Testing tab)
         NetworkTable shooterTable = inst.getTable("shooter");
@@ -181,11 +181,8 @@ public class NetworkValues {
     }
 
     public double GetMaxSpeedInMeters() {
-        if (offenseMode) {
-            return maxSpeedInMeters; // Uses the live-tuned max speed
-        } else {
-            return 1.5; // Fixed "Defense" speed
-        }
+        return maxSpeedInMeters; // Uses the live-tuned max speed
+    
     }
 
     public double getFlywheelRPM() {
@@ -197,9 +194,9 @@ public class NetworkValues {
     }
 
 
-    public boolean isOffenseMode() {
+    /*public boolean isOffenseMode() {
         return offenseMode;
-    }
+    }*/
 
     public double getPassHoodAngle() {
         return passHoodAngle;
@@ -238,7 +235,7 @@ public class NetworkValues {
         defaultFlywheelRPM = defaultFlywheelRPMSub.get();
         flywheelRPM = flywheelRPMSub.get();
         maxSpeedInMeters = maxSpeedInMetersSub.get();
-        offenseMode = offenseModeSub.get();
+        //offenseMode = offenseModeSub.get();
 
         passHoodAngle = passHoodAngleSub.get();
         passRPM = passRPMSub.get();

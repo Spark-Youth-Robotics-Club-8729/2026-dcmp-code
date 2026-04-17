@@ -243,4 +243,8 @@ public class DriveSubsystem extends SubsystemBase {
         m_rearRight.getState());
 }
 
+  public void resetGyro(){
+    m_gyro.reset();
+  }
+
 }
