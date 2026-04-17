@@ -29,7 +29,10 @@ public final class Constants {
   public static final class DriveConstants {
     // Driving Parameters - Note that these are not the maximum capable speeds of
     // the robot, rather the allowed maximum speeds
-    public static final double kMaxSpeedMetersPerSecond = 0.12;
+    public static final double kMaxSpeedMetersPerSecond = 0.7;
+    public static final double kMaxTurnSpeedMetersPerSecond = 0.5;
+    public static final double driveStallCurrentAmps = 20.0;  
+    
 
     public static final double kTrackRadiusMeters = Math.sqrt(Math.pow(13.5 * 0.0254, 2) + Math.pow(13.5 * 0.0254, 2));
 
@@ -80,7 +83,7 @@ public final class Constants {
 
     public static final int kIndexerCanId = 22;
     public static final double gearratio = 4.0;
-    public static final double feedVolts = 10.0;
+    public static final double feedVolts = 9.0;
     public static final double reverseVolts = -10.0;
   }
 
@@ -146,7 +149,7 @@ public final class Constants {
     public static final double hoodKp = 30.0; // Increased — 1.0 may be too weak against gravity/load
     public static final double hoodKi = 0.0;
     public static final double hoodKd = 0.9; // Small D to damp oscillation
-    public static final double kDefaultPassHoodAngle = 30.0;
+    public static final double kDefaultPassHoodAngle = 25.0;
     
     // ---------------------------------------------------------------------------
     // Feeder (green wheels, hopper→shooter) PID / feedforward constants
@@ -176,7 +179,7 @@ public final class Constants {
 
     // Preset shot constants
     public static final double hubHoodAngleDeg   = 10.0;   // lined up to hub
-    public static final double hubFlywheelRPM    = 2500.0;
+    public static final double hubFlywheelRPM    = 2600.0;
     public static final double towerHoodAngleDeg = 20.0;   // lined up to tower
     public static final double towerFlywheelRPM  = 3200.0;
 
@@ -197,6 +200,8 @@ public final class Constants {
     // Slapdown angle limits (radians, at the mechanism after gear reduction)
     // Top position wraps around 2π/0, so use a value near 0 or 2π
     public static final double slapdownUpAngleRad = 0.0; // Top position (near 0/2π)
+    public static final double slapdownJUpAngleRad = 0.4; // Top position (near 0/2π)
+
     public static final double slapdownDownAngleRad = 1.42; // Down position 
 
     // Slapdown PID gains (separate for each mode so they can be tuned
@@ -205,9 +210,9 @@ public final class Constants {
     public static final double slapdownUpKi = 0.0; // TODO: Tune
     public static final double slapdownUpKd = 0.0; // TODO: Tune
 
-    public static final double slapdownDownKp = 0.1; // TODO: Tune (increased from 0.001)
+    public static final double slapdownDownKp = 0.05; // TODO: Tune (increased from 0.001)
     public static final double slapdownDownKi = 0.00; // TODO: Tune
-    public static final double slapdownDownKd = 0.00; // TODO: Tune
+    public static final double slapdownDownKd = 0.01; // TODO: Tune
 
     // Slapdown tolerance
     public static final double slapdownToleranceRad = Units.degreesToRadians(5.0);
@@ -220,7 +225,7 @@ public final class Constants {
 
     // Roller voltages (positive = intake in, negative = outtake)
     public static final double rollerIntakeVolts = 7.0; // Reduced from 10.0
-    public static final double rollerOuttakeVolts = -6.0; // Reduced from -6.0 
+    public static final double rollerOuttakeVolts = -7.0; // Reduced from -6.0 
 
     // Jitter constansts
     public static final double jitterRangeRad = 0.4; // Tuned
@@ -260,7 +265,8 @@ public final class Constants {
   }
 
   public static final class AutoConstants {
-    public static final double kMaxSpeedMetersPerSecond = 0.12;
+    public static final double kMaxSpeedMetersPerSecond = 0.7;
+    public static final double kMaxTurnSpeedMetersPerSecond = 0.35;
     public static final double kMaxAccelerationMetersPerSecondSquared = 2;
     public static final double kMaxAngularSpeedRadiansPerSecond = Math.PI;
     public static final double kMaxAngularSpeedRadiansPerSecondSquared = Math.PI;

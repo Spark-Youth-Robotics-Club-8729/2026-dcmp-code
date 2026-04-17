@@ -42,6 +42,11 @@ import edu.wpi.first.wpilibj2.command.button.POVButton;
 import frc.robot.NetworkValues;
 import java.util.List;
 import java.util.function.Supplier;
+
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.path.PathPlannerPath;
+
 import java.util.Timer;
 import frc.robot.command.SystemTestCommand;
 
@@ -59,6 +64,9 @@ public class RobotContainer {
   public ShooterSubsystem getShooterSubsystem() {
     return m_shooterSubsystem;
   }
+  public IntakeSubsystem getIntakeSubsystem() {
+    return m_intakeSubsystem;
+  }
   private final DriveSubsystem m_robotDrive = new DriveSubsystem();
   private final IndexerSubsystem m_indexerSubsystem = new IndexerSubsystem();
   private final IntakeSubsystem m_intakeSubsystem = new IntakeSubsystem();
@@ -73,15 +81,41 @@ public class RobotContainer {
   boolean m_fieldRelative = true;
   boolean m_indexer = true;
   boolean m_slapdown = true;
+  boolean m_jitterToggle = true;
   
 
   private final double offense_speed = 1.0;
   private final double defense_speed = 1.7;  // 30% times faster than offense
 
+   private final SendableChooser<Command> autoChooser;
+
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
   public RobotContainer() {
+    registerNamedCommands();
+
+        // FIX: autoChooser setup moved into the constructor where it belongs
+    autoChooser = AutoBuilder.buildAutoChooser();
+
+    // Add every .path file as a standalone auto option
+    String[] pathNames = {
+        // Starting position paths
+        "Red Middle Preload Shoot", "Red 2 Cycle Right", "Red 2 Cycle Left", "HP Red Auto", "HP Blue Auto", "Blue One Cycle Left",
+        "Blue Middle HP", "Blue 2 Cycle Right",
+        "Blue 2 Cycle Left", "Blue Middle Preload Shoot", "Blue Leave Middle"
+    };
+
+    for (String pathName : pathNames) {
+      try {
+        PathPlannerPath path = PathPlannerPath.fromPathFile(pathName);
+        autoChooser.addOption("Path: " + pathName, AutoBuilder.followPath(path));
+      } catch (Exception e) {
+        System.err.println("Failed to load path: " + pathName);
+      }
+    }
+
+    SmartDashboard.putData("Auto Chooser", autoChooser);
     // Configure the button bindings
     configureButtonBindings();
     m_snapController.enableContinuousInput(-180.0, 180.0);
@@ -96,12 +130,218 @@ public class RobotContainer {
                 * NetworkValues.getInstance().GetMaxSpeedInMeters(), // Added this
             -MathUtil.applyDeadband(m_driverController.getLeftX(), OIConstants.kDriveDeadband) 
                 * NetworkValues.getInstance().GetMaxSpeedInMeters(), // Added this
-            -MathUtil.applyDeadband(m_driverController.getRightX(), OIConstants.kDriveDeadband),
+            -MathUtil.applyDeadband(m_driverController.getRightX(), OIConstants.kDriveDeadband)
+                * NetworkValues.getInstance().GetMaxTurnSpeed(),
             m_fieldRelative),
         m_robotDrive)); 
 
         NetworkValues.getInstance().systemTest(
         new SystemTestCommand(m_robotDrive).withName("Full System Test"));
+  }
+
+  private void registerNamedCommands() {
+
+    // Feed note through shooter + indexer
+    NamedCommands.registerCommand(
+        "ShooterFeed",
+        Commands.startEnd(
+            () -> {
+              m_shooterSubsystem.feedNote();
+              m_indexerSubsystem.index();
+            },
+            () -> {
+              m_shooterSubsystem.stopFeeder();
+              m_indexerSubsystem.stopindexer();
+            },
+            m_shooterSubsystem,
+            m_indexerSubsystem));
+
+    // Stop shooter and indexer completely
+    NamedCommands.registerCommand(
+        "ShooterStop",
+        Commands.runOnce(
+            () -> {
+                m_shooterSubsystem.setFlywheelVelocities(0, 0);
+                m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
+                m_shooterSubsystem.stopFeeder();
+                m_indexerSubsystem.stopindexer();
+            },
+            m_shooterSubsystem,
+            m_indexerSubsystem));
+
+    // Lock wheels in X formation (replaces drive::stopWithX)
+    NamedCommands.registerCommand(
+        "DriveStopWithX",
+        Commands.runOnce(m_robotDrive::setX, m_robotDrive));
+
+    // Intake in
+    NamedCommands.registerCommand(
+        "IntakeIN",
+        Commands.startEnd(
+            () -> m_intakeSubsystem.intake(),
+            () -> m_intakeSubsystem.stopintake(),
+            m_intakeSubsystem));
+
+    NamedCommands.registerCommand(
+        "IntakeIn",
+        Commands.startEnd(
+            () -> m_intakeSubsystem.intake(),
+            () -> m_intakeSubsystem.stopintake(),
+            m_intakeSubsystem));
+
+    // Intake out
+    NamedCommands.registerCommand(
+        "IntakeOUT",
+        Commands.startEnd(
+            () -> m_intakeSubsystem.outtake(),
+            () -> m_intakeSubsystem.stopintake(),
+            m_intakeSubsystem));
+
+    NamedCommands.registerCommand(
+        "IntakeOut",
+        Commands.startEnd(
+            () -> m_intakeSubsystem.outtake(),
+            () -> m_intakeSubsystem.stopintake(),
+            m_intakeSubsystem));
+
+    // Slapdown down
+    NamedCommands.registerCommand(
+        "IntakeSlapdownDownOnly",
+        Commands.runOnce(
+            () -> m_intakeSubsystem.slapdowndown(),
+            m_intakeSubsystem));
+
+    // Slapdown up (retract)
+    NamedCommands.registerCommand(
+        "IntakeRetract",
+        Commands.runOnce(
+            () -> m_intakeSubsystem.slapdownup(),
+            m_intakeSubsystem));
+
+
+    // Slapdown down then intake (deploy + run rollers)
+    NamedCommands.registerCommand(
+        "SlapdownAndIntakeCommand",
+        Commands.sequence(
+            Commands.runOnce(() -> m_intakeSubsystem.slapdowndown(), m_intakeSubsystem),
+            Commands.startEnd(
+                () -> m_intakeSubsystem.intake(),
+                () -> m_intakeSubsystem.stopintake(),
+                m_intakeSubsystem)));
+
+    NamedCommands.registerCommand(
+        "StartIntakeSlapdown",
+        Commands.sequence(
+            Commands.runOnce(() -> m_intakeSubsystem.slapdowndown(), m_intakeSubsystem),
+            Commands.startEnd(
+                () -> m_intakeSubsystem.intake(),
+                () -> m_intakeSubsystem.stopintake(),
+                m_intakeSubsystem)));
+
+    // Indexer commands
+    NamedCommands.registerCommand(
+        "IndexerFeed",
+        Commands.startEnd(
+            () -> m_indexerSubsystem.index(),
+            () -> m_indexerSubsystem.stopindexer(),
+            m_indexerSubsystem));
+
+    NamedCommands.registerCommand(
+        "IndexerReverse",
+        Commands.startEnd(
+            () -> m_indexerSubsystem.reverse(),
+            () -> m_indexerSubsystem.stopindexer(),
+            m_indexerSubsystem));
+
+    NamedCommands.registerCommand(
+        "IndexerStop",
+        Commands.runOnce(
+            () -> m_indexerSubsystem.stopindexer(),
+            m_indexerSubsystem));
+
+    // Spin up flywheels + feed for 10 seconds
+    NamedCommands.registerCommand(
+        "shoot",
+        Commands.run(() -> {
+                // No vision target — use safe defaults
+                m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
+                m_shooterSubsystem.setFlywheelVelocities(
+                    ShooterConstants.defaultFlywheelSpeedRPM+500,
+                    ShooterConstants.defaultFlywheelSpeedRPM+500);
+                if (m_shooterSubsystem.isReadyToShoot()) {
+                    m_shooterSubsystem.feedNote();
+                    m_indexerSubsystem.index();
+                }
+                return;
+        }, m_shooterSubsystem, m_indexerSubsystem)
+        .finallyDo(() -> {
+            m_shooterSubsystem.setFlywheelVelocities(0, 0);
+            m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
+            m_shooterSubsystem.stopFeeder();
+            m_indexerSubsystem.stopindexer();
+        }));
+
+    // Same as above but with slapdown jitter while shooting.. in the works
+    /*
+    NamedCommands.registerCommand(
+        "JitterShoot10s",
+        Commands.run(() -> {
+ 
+                m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
+                m_shooterSubsystem.setFlywheelVelocities(
+                    ShooterConstants.defaultFlywheelSpeedRPM,
+                    ShooterConstants.defaultFlywheelSpeedRPM);
+                if (m_shooterSubsystem.isReadyToShoot()) {
+                    m_shooterSubsystem.feedNote();
+                    m_indexerSubsystem.index();
+                    
+                    // Apply jitter to slapdown during shooting
+                    double currentAngle = m_intakeSubsystem.currentPosition();
+                    if (m_jitterToggle) {
+                        System.out.println("bringing jitter UP");
+                        m_intakeSubsystem.slapdownjitterUp(currentAngle);
+                        m_jitterToggle = false;
+                    } else {
+                        System.out.println("bringing jitter DOWN");
+                        m_intakeSubsystem.slapdownjitterDown(currentAngle);
+                        m_jitterToggle = true;
+                    }
+                }
+                return;
+        }, m_shooterSubsystem, m_indexerSubsystem, m_intakeSubsystem)
+        .finallyDo(() -> {
+            m_shooterSubsystem.setFlywheelVelocities(0, 0);
+            m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
+            m_shooterSubsystem.stopFeeder();
+            m_indexerSubsystem.stopindexer();
+            m_intakeSubsystem.slapdownup();
+        })
+        .withTimeout(10.0));
+        */
+ 
+
+    // Stop everything and retract intake
+    NamedCommands.registerCommand(
+        "StopIntakeAndShooter",
+        Commands.runOnce(
+            () -> {
+              m_intakeSubsystem.slapdownup();
+              m_intakeSubsystem.stopintake();
+              m_indexerSubsystem.stopindexer();
+              m_shooterSubsystem.stopFeeder();
+              m_shooterSubsystem.setFlywheelVelocities(0, 0);
+            },
+            m_intakeSubsystem, m_indexerSubsystem, m_shooterSubsystem)
+            .ignoringDisable(true));
+
+    NamedCommands.registerCommand(
+        "StopIntake",
+        Commands.runOnce(
+            () -> {
+              m_intakeSubsystem.stopintake();
+            },
+            m_intakeSubsystem)
+            .ignoringDisable(true));
   }
 
   /**
@@ -135,7 +375,7 @@ public class RobotContainer {
      * Left Trigger (>0.5) . Court Pass: Cross-court pass logic (Court Hood/RPM), waits 0.3 sec
      * POV Up (0) .......... Manual Index: Manually runs the indexer at feed voltage
      * POV Down (180) ...... Slapdown Toggle: Toggles the intake slapdown position
-     * POV Right (90) ...... Hood MAX: Sets hood to max angle
+     * POV Right (90) ...... Adding the Jitter
      * POV Left (270) ...... Hood MIN: Sets hood to min angle
          */
 
@@ -185,7 +425,7 @@ public class RobotContainer {
 
         // SHOULD 0 the gyro...
         new Trigger(() -> m_driverController.getLeftTriggerAxis() > 0.5)
-           .onTrue(new RunCommand(() -> {
+           .whileTrue(new RunCommand(() -> {
                 m_robotDrive.resetGyro();
                 System.out.println("Zeroing gyro!");
             }, m_robotDrive));
@@ -252,12 +492,10 @@ public class RobotContainer {
         new POVButton(m_operatorController, 180)
             .onTrue(Commands.runOnce(()->{m_intakeSubsystem.slapdowntoggle();}));
         
-            // set hood angle to max
+            // jitter....
         new POVButton(m_operatorController, 90)
-            .onTrue(Commands.runOnce(()->{
-                m_shooterSubsystem.setHoodPosition(Constants.ShooterConstants.hoodMaxAngleRad);
-            },m_shooterSubsystem));
-
+           .whileTrue(Commands.runOnce(()->{m_intakeSubsystem.jittertoggle();}));
+ 
             // set hood anlge to min
         new POVButton(m_operatorController, 270)
             .onTrue(Commands.runOnce(()->{
@@ -360,19 +598,19 @@ public class RobotContainer {
                 m_shooterSubsystem, m_indexerSubsystem
             ));
             
-        //bring hood up (add jitter one later...)
-        new POVButton(m_operatorController, 90)
-             .onTrue(Commands.runOnce(()->{
-                 m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMaxAngleRad);
-                 System.out.println("Hood angle: " + Units.radiansToDegrees(m_shooterSubsystem.getHoodPosition()));
-             }, m_shooterSubsystem));
+        // //bring hood up (add jitter one later...)
+        // new POVButton(m_operatorController, 90)
+        //      .onTrue(Commands.runOnce(()->{
+        //          m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMaxAngleRad);
+        //          System.out.println("Hood angle: " + Units.radiansToDegrees(m_shooterSubsystem.getHoodPosition()));
+        //      }, m_shooterSubsystem));
 
-             // bring hood down
-        new POVButton(m_operatorController, 270)
-             .onTrue(Commands.runOnce(()->{
-                 m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
-                 System.out.println("Hood angle: " + Units.radiansToDegrees(m_shooterSubsystem.getHoodPosition()));
-             }, m_shooterSubsystem)); 
+        //      // bring hood down
+        // new POVButton(m_operatorController, 270)
+        //      .onTrue(Commands.runOnce(()->{
+        //          m_shooterSubsystem.setHoodPosition(ShooterConstants.hoodMinAngleRad);
+        //          System.out.println("Hood angle: " + Units.radiansToDegrees(m_shooterSubsystem.getHoodPosition()));
+        //      }, m_shooterSubsystem)); 
 
 
 

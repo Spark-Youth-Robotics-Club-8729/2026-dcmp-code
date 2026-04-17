@@ -131,6 +131,11 @@ public class IntakeSubsystem extends SubsystemBase{
         setVoltage(0);
     }
 
+    public boolean isRunning()
+    {
+        return getvoltage() < 0;
+    }
+
     //slapdown 
     public void slapdowndown(){
         //sets the goal and the new PID
@@ -148,7 +153,16 @@ public class IntakeSubsystem extends SubsystemBase{
         //slapdownPID.enableContinuousInput(0, 2 * Math.PI);
     }
 
-    // jittering
+    public void slapdownJup(){
+        //sets the goal and the new PID
+        slapdowntarget = intakeconstants.slapdownJUpAngleRad;
+        slapdownPID = new PIDController(intakeconstants.slapdownUpKp, intakeconstants.slapdownUpKi, intakeconstants.slapdownUpKd);
+        slapdownPID.setTolerance(intakeconstants.slapdownToleranceRad);
+        //slapdownPID.enableContinuousInput(0, 2 * Math.PI);
+    }
+
+    // jittering (aneire dont linke....)
+    /* 
     public void slapdownjitterUp(double angle){
         slapdowntarget = angle - intakeconstants.jitterRangeRad;
         
@@ -177,6 +191,7 @@ public class IntakeSubsystem extends SubsystemBase{
         slapdownPID.setTolerance(intakeconstants.slapdownToleranceRad);
         slapdownPID.enableContinuousInput(0, 2 * Math.PI);
     }
+        */
 
 
 
@@ -209,6 +224,29 @@ public class IntakeSubsystem extends SubsystemBase{
             slapdowndown();
         } else {
             slapdownup();
+        }
+    }
+
+    public void jittertoggle() {
+        double currentPosition = currentPosition();
+
+        // true is when the slapdown is up ()
+        boolean slapState = true;
+
+        if((0.7 < currentPosition && currentPosition < 4.0)) {
+            //slapdown is down
+            slapState = false;
+        } else {
+            slapState = true;
+        }
+
+        System.out.println("slap state jitter v (true = top): " + slapState);
+
+        // based on current slapState it will run the slapdown up or down
+        if (slapState) {
+            slapdowndown();
+        } else {
+            slapdownJup();
         }
     }
 

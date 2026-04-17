@@ -34,7 +34,7 @@ public class NetworkValues {
     // PASSING (CROSS-COURT)
     private DoublePublisher courtHoodAnglePub;
     private DoubleSubscriber courtHoodAngleSub;
-    private double courtHoodAngle = 26.0; 
+    private double courtHoodAngle = 30.0; 
 
     private DoublePublisher courtRPMPub;
     private DoubleSubscriber courtRPMSub;
@@ -67,6 +67,10 @@ public class NetworkValues {
     private DoubleSubscriber maxSpeedInMetersSub;
     private double maxSpeedInMeters = DriveConstants.kMaxSpeedMetersPerSecond;
 
+    private DoublePublisher maxTurnSpeedPub;
+    private DoubleSubscriber maxTurnSpeedSub;
+    private double maxTurnSpeed = DriveConstants.kMaxTurnSpeedMetersPerSecond;
+
     // live tune normal flywheel RPM
     private DoublePublisher defaultFlywheelRPMPub;
     private DoubleSubscriber defaultFlywheelRPMSub;
@@ -84,6 +88,7 @@ public class NetworkValues {
     private BooleanPublisher shooterHoodAtPositionPub;
     // Drive telemetry — published for Elastic Driver Station tab
     private DoublePublisher driveSpeedMPSPub;
+    private BooleanPublisher intakeRunningPub;
 
     public static NetworkValues getInstance(){
         if (instance == null) {
@@ -102,10 +107,10 @@ public class NetworkValues {
         maxSpeedInMetersPub.set(maxSpeedInMeters);
         maxSpeedInMetersSub = maxSpeedInMetersTopic.subscribe(maxSpeedInMeters);
 
-        DoubleTopic defaultRPMTopic = table.getDoubleTopic("defaultFlywheelRPM");
-        defaultFlywheelRPMPub = defaultRPMTopic.publish();
-        defaultFlywheelRPMPub.set(defaultFlywheelRPM);
-        defaultFlywheelRPMSub = defaultRPMTopic.subscribe(defaultFlywheelRPM);
+        DoubleTopic maxTurnSpeedTopic = table.getDoubleTopic("maxTurnSpeed");
+        maxTurnSpeedPub = maxTurnSpeedTopic.publish();
+        maxTurnSpeedPub.set(maxTurnSpeed);
+        maxTurnSpeedSub = maxTurnSpeedTopic.subscribe(maxTurnSpeed);
 
         // alliance pass
         DoubleTopic passHoodTopic = table.getDoubleTopic("passHoodAngleDeg");
@@ -171,6 +176,10 @@ public class NetworkValues {
         shooterFlywheelRPMPub = shooterTable.getDoubleTopic("flywheelRPM").publish();
         shooterAtSpeedPub    = shooterTable.getBooleanTopic("flywheelAtSpeed").publish();
         shooterHoodAtPositionPub = shooterTable.getBooleanTopic("hoodAtPosition").publish();
+        
+        // Intake
+        NetworkTable intakeTable = inst.getTable("intake");
+        intakeRunningPub = intakeTable.getBooleanTopic("intakeRunning").publish();
 
         // Drive telemetry (for Elastic Driver Station tab)
         NetworkTable driveTable = inst.getTable("drive");
@@ -182,7 +191,10 @@ public class NetworkValues {
 
     public double GetMaxSpeedInMeters() {
         return maxSpeedInMeters; // Uses the live-tuned max speed
-    
+    }
+
+    public double GetMaxTurnSpeed() {
+        return maxTurnSpeed;
     }
 
     public double getFlywheelRPM() {
@@ -235,6 +247,7 @@ public class NetworkValues {
         defaultFlywheelRPM = defaultFlywheelRPMSub.get();
         flywheelRPM = flywheelRPMSub.get();
         maxSpeedInMeters = maxSpeedInMetersSub.get();
+        maxTurnSpeed = maxTurnSpeedSub.get();
         //offenseMode = offenseModeSub.get();
 
         passHoodAngle = passHoodAngleSub.get();
@@ -255,6 +268,9 @@ public class NetworkValues {
         shooterFlywheelRPMPub.set(shooter.getAverageFlywheelVelocity());
         shooterAtSpeedPub.set(shooter.areFlywheelsAtSpeed());
         shooterHoodAtPositionPub.set(shooter.isHoodAtPosition());
+        
+        // Publish intake telemetry
+        intakeRunningPub.set(robotContainer.getIntakeSubsystem().isRunning());
 
         // Publish drive telemetry for Elastic Driver Station tab
         driveSpeedMPSPub.set(GetMaxSpeedInMeters());
